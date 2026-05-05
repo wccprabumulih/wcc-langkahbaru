@@ -577,26 +577,41 @@ app.post('/api/chat', async (req, res) => {
     const { messages } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ success: false, message: 'Invalid messages' });
 
-    // Fetch active knowledge base
-    const kb = await pool.query(
-      'SELECT category, question, answer FROM chatbot_knowledge WHERE active = TRUE ORDER BY order_index ASC, created_at ASC'
-    );
+    // Fetch active knowledge base + packages in parallel
+    const [kb, pkgs] = await Promise.all([
+      pool.query('SELECT category, question, answer FROM chatbot_knowledge WHERE active = TRUE ORDER BY order_index ASC, created_at ASC'),
+      pool.query('SELECT label, price, price_note, badge, popular, features FROM packages WHERE active = TRUE ORDER BY sort_order ASC'),
+    ]);
 
     const knowledgeText = kb.rows.length > 0
       ? kb.rows.map(r => `[${r.category || 'Umum'}]\nTopik: ${r.question}\nJawaban: ${r.answer}`).join('\n\n')
-      : 'Tidak ada knowledge base tersedia.';
+      : '';
+
+    let packagesText = '';
+    if (pkgs.rows.length > 0) {
+      packagesText = '\n\n[Paket Layanan]\n' + pkgs.rows.map(p => {
+        const features = Array.isArray(p.features) ? p.features : (typeof p.features === 'string' ? JSON.parse(p.features) : []);
+        const featureList = features.length > 0 ? '\n  Fitur: ' + features.join(', ') : '';
+        const badge = p.badge ? ` (${p.badge})` : '';
+        const popular = p.popular ? ' ⭐ TERPOPULER' : '';
+        return `Paket ${p.label}${badge}${popular}: ${p.price} ${p.price_note || ''}${featureList}`;
+      }).join('\n');
+    }
+
+    const contextText = (knowledgeText + packagesText).trim() || 'Tidak ada informasi tersedia.';
 
     const systemPrompt = `Kamu adalah asisten virtual WCC Langkah Baru, layanan Wedding Content Creator profesional di Prabumulih, Sumatera Selatan.
 
 Tugas kamu: jawab pertanyaan pengunjung website dengan ramah, singkat, dan informatif dalam Bahasa Indonesia. Gunakan bahasa santai tapi tetap profesional.
 
 Informasi yang kamu miliki:
-${knowledgeText}
+${contextText}
 
 Aturan penting:
-- Jawab hanya berdasarkan informasi di atas jika pertanyaan terkait layanan
+- Jawab langsung berdasarkan data di atas — termasuk harga dan detail paket yang sudah tersedia
+- Jika ditanya paket termurah/termahal, bandingkan harga dari data paket di atas
 - Jika tidak tahu atau di luar topik, arahkan ke WhatsApp: 6281532477237
-- Jangan buat-buat informasi harga atau detail yang tidak ada di knowledge base
+- Jangan buat-buat informasi yang tidak ada di atas
 - Tetap singkat, maksimal 3-4 kalimat per jawaban
 - Gunakan emoji secukupnya agar terasa ramah`;
 
