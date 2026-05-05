@@ -577,16 +577,21 @@ app.post('/api/chat', async (req, res) => {
     const { messages } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ success: false, message: 'Invalid messages' });
 
-    // Fetch active knowledge base + packages in parallel
-    const [kb, pkgs] = await Promise.all([
+    // Fetch all public-safe data in parallel
+    const [kb, pkgs, reviews, aboutRow, partners] = await Promise.all([
       pool.query('SELECT category, question, answer FROM chatbot_knowledge WHERE active = TRUE ORDER BY order_index ASC, created_at ASC'),
       pool.query('SELECT label, price, price_note, badge, popular, features FROM packages WHERE active = TRUE ORDER BY sort_order ASC'),
+      pool.query('SELECT name, rating, comment FROM reviews WHERE visible = true ORDER BY created_at DESC LIMIT 5'),
+      pool.query("SELECT value FROM site_content WHERE key = 'about'"),
+      pool.query('SELECT name, category FROM partners WHERE active = TRUE ORDER BY order_index ASC'),
     ]);
 
+    // --- Knowledge base ---
     const knowledgeText = kb.rows.length > 0
-      ? kb.rows.map(r => `[${r.category || 'Umum'}]\nTopik: ${r.question}\nJawaban: ${r.answer}`).join('\n\n')
+      ? '[FAQ & Informasi Umum]\n' + kb.rows.map(r => `[${r.category || 'Umum'}]\nTopik: ${r.question}\nJawaban: ${r.answer}`).join('\n\n')
       : '';
 
+    // --- Packages ---
     let packagesText = '';
     if (pkgs.rows.length > 0) {
       packagesText = '\n\n[Paket Layanan]\n' + pkgs.rows.map(p => {
@@ -598,7 +603,34 @@ app.post('/api/chat', async (req, res) => {
       }).join('\n');
     }
 
-    const contextText = (knowledgeText + packagesText).trim() || 'Tidak ada informasi tersedia.';
+    // --- About / profil bisnis ---
+    let aboutText = '';
+    if (aboutRow.rows[0]?.value) {
+      const a = aboutRow.rows[0].value;
+      const feats = Array.isArray(a.features) ? a.features.map(f => `${f.icon} ${f.title}: ${f.desc}`).join(', ') : '';
+      aboutText = `\n\n[Profil Bisnis]\n${a.heading} ${a.heading_highlight}\n${a.desc1}\n${a.desc2}` +
+        (a.instagram ? `\nInstagram: ${a.instagram}` : '') +
+        (a.availability ? `\nKetersediaan: ${a.availability}` : '') +
+        (feats ? `\nKeunggulan: ${feats}` : '');
+    }
+
+    // --- Reviews / testimoni ---
+    let reviewsText = '';
+    if (reviews.rows.length > 0) {
+      reviewsText = '\n\n[Testimoni Pelanggan Terbaru]\n' + reviews.rows.map(r =>
+        `"${r.comment}" — ${r.name} (⭐${r.rating}/5)`
+      ).join('\n');
+    }
+
+    // --- Partners ---
+    let partnersText = '';
+    if (partners.rows.length > 0) {
+      partnersText = '\n\n[Partner / Rekanan]\n' + partners.rows.map(p =>
+        p.category ? `${p.name} (${p.category})` : p.name
+      ).join(', ');
+    }
+
+    const contextText = (knowledgeText + packagesText + aboutText + reviewsText + partnersText).trim() || 'Tidak ada informasi tersedia.';
 
     const systemPrompt = `Kamu adalah asisten virtual WCC Langkah Baru, layanan Wedding Content Creator profesional di Prabumulih, Sumatera Selatan.
 
@@ -608,8 +640,10 @@ Informasi yang kamu miliki:
 ${contextText}
 
 Aturan penting:
-- Jawab langsung berdasarkan data di atas — termasuk harga dan detail paket yang sudah tersedia
-- Jika ditanya paket termurah/termahal, bandingkan harga dari data paket di atas
+- Jawab langsung dan akurat berdasarkan data di atas
+- Jika ditanya harga, paket, fitur, atau perbandingan paket — gunakan data paket di atas
+- Jika ditanya tentang review/testimoni — gunakan data testimoni di atas
+- Jika ditanya tentang bisnis/profil — gunakan data profil bisnis di atas
 - Jika tidak tahu atau di luar topik, arahkan ke WhatsApp: 6281532477237
 - Jangan buat-buat informasi yang tidak ada di atas
 - Tetap singkat, maksimal 3-4 kalimat per jawaban
