@@ -10,6 +10,8 @@ interface Partner {
 
 export default function Partners() {
   const [partners, setPartners] = useState<Partner[]>([])
+  const [visible, setVisible] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -19,12 +21,24 @@ export default function Partners() {
       .catch(() => {})
   }, [])
 
-  if (partners.length === 0) return null
+  useEffect(() => {
+    if (!sectionRef.current) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
+      { threshold: 0.1 }
+    )
+    observer.observe(sectionRef.current)
+    return () => observer.disconnect()
+  }, [])
 
-  const doubled = [...partners, ...partners]
+  const doubled = partners.length > 0 ? [...partners, ...partners] : []
 
   return (
-    <section className="partners-section reveal" id="partners">
+    <section
+      ref={sectionRef}
+      className={`partners-section${visible ? ' partners-visible' : ''}`}
+      id="partners"
+    >
       <div className="container">
         <div className="partners-header">
           <div className="partners-eyebrow">Ekosistem Wedding Terbaik</div>
@@ -35,17 +49,28 @@ export default function Partners() {
         </div>
       </div>
 
-      <div className="partners-ticker-wrap">
-        <div className="partners-ticker-fade partners-ticker-fade-left" />
-        <div className="partners-ticker-fade partners-ticker-fade-right" />
-        <div className="partners-ticker" ref={trackRef}>
-          <div className="partners-track">
-            {doubled.map((p, i) => (
-              <PartnerCard key={`${p.id}-${i}`} partner={p} />
+      {partners.length === 0 ? (
+        <div className="partners-empty">
+          <div className="partners-empty-row">
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="partner-card partner-card-ghost" />
             ))}
           </div>
+          <p className="partners-empty-hint">Partner akan tampil di sini setelah ditambahkan dari admin panel.</p>
         </div>
-      </div>
+      ) : (
+        <div className="partners-ticker-wrap">
+          <div className="partners-ticker-fade partners-ticker-fade-left" />
+          <div className="partners-ticker-fade partners-ticker-fade-right" />
+          <div className="partners-ticker" ref={trackRef}>
+            <div className="partners-track">
+              {doubled.map((p, i) => (
+                <PartnerCard key={`${p.id}-${i}`} partner={p} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
