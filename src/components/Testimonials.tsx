@@ -70,24 +70,7 @@ export default function Testimonials() {
       if (!data.success) throw new Error(data.message)
       setSubmitMsg({ type: 'ok', text: data.message })
       setSubmitted(true)
-      // Optimistically prepend the new review instantly
-      const newReview: Review = {
-        id: Date.now(),
-        name: form.name,
-        rating: form.rating,
-        comment: form.comment,
-        created_at: new Date().toISOString(),
-      }
-      setReviews(prev => {
-        const base = prev.filter(r => r.id < 0 ? false : true) // drop fallback sentinels
-        return [newReview, ...base]
-      })
       setForm({ name: '', comment: '', rating: 0 })
-      // Background sync with server to get the real id
-      fetch('/api/reviews')
-        .then(r => r.json())
-        .then(d => { if (d.success) setReviews(d.data) })
-        .catch(() => {})
     } catch (err: unknown) {
       setSubmitMsg({ type: 'err', text: err instanceof Error ? err.message : 'Gagal mengirim.' })
     } finally {
