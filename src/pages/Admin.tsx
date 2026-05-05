@@ -8,9 +8,10 @@ import AdminPaket from '../admin/AdminPaket'
 import AdminUlasan from '../admin/AdminUlasan'
 import AdminGaleri from '../admin/AdminGaleri'
 import AdminTentangKami from '../admin/AdminTentangKami'
+import AdminPartner from '../admin/AdminPartner'
 import AdminPengaturan from '../admin/AdminPengaturan'
 
-type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'galeri' | 'tentang' | 'pengaturan'
+type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'galeri' | 'tentang' | 'partner' | 'pengaturan'
 
 const pageTitle: Record<Page, string> = {
   dashboard: 'Dashboard',
@@ -20,6 +21,7 @@ const pageTitle: Record<Page, string> = {
   ulasan: 'Ulasan',
   galeri: 'Galeri',
   tentang: 'Tentang Kami',
+  partner: 'Partner & Mitra',
   pengaturan: 'Pengaturan',
 }
 
@@ -83,6 +85,16 @@ function IconTentang() {
     </svg>
   )
 }
+function IconPartner() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M5.5 7.5c0-1.105.895-2 2-2s2 .895 2 2-.895 2-2 2-2-.895-2-2Z" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M1 4.5c0-.828.672-1.5 1.5-1.5S4 3.672 4 4.5 3.328 6 2.5 6 1 5.328 1 4.5ZM11 4.5c0-.828.672-1.5 1.5-1.5S14 3.672 14 4.5 13.328 6 12.5 6 11 5.328 11 4.5Z" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M4 11c0-1.933 1.567-3 3.5-3S11 9.067 11 11" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      <path d="M1 13c0-1.343.933-2 2.5-2M14 13c0-1.343-.933-2-2.5-2" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  )
+}
 function IconPengaturan() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -117,7 +129,8 @@ const navGroups: { label: string; items: { key: Page; Icon: () => JSX.Element; l
   {
     label: 'Konten',
     items: [
-      { key: 'tentang', Icon: IconTentang, label: 'Tentang Kami' },
+      { key: 'tentang',  Icon: IconTentang,  label: 'Tentang Kami' },
+      { key: 'partner',  Icon: IconPartner,  label: 'Partner & Mitra' },
     ],
   },
   {
@@ -210,6 +223,7 @@ export default function Admin() {
           {page === 'ulasan'     && <AdminUlasan />}
           {page === 'galeri'     && <AdminGaleri />}
           {page === 'tentang'    && <AdminTentangKami />}
+          {page === 'partner'    && <AdminPartner />}
           {page === 'pengaturan' && <AdminPengaturan />}
         </div>
       </div>

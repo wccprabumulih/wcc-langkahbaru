@@ -569,6 +569,75 @@ app.delete('/api/admin/images/:slot', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── PARTNERS ────────────────────────────────────────────────────────────────
+
+// GET /api/partners — public, active only
+app.get('/api/partners', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, name, category, logo_data, website_url, order_index FROM partners WHERE active = TRUE ORDER BY order_index ASC, created_at ASC'
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/admin/partners — admin, all
+app.get('/api/admin/partners', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM partners ORDER BY order_index ASC, created_at ASC'
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/admin/partners — create
+app.post('/api/admin/partners', requireAdmin, async (req, res) => {
+  try {
+    const { name, category, logo_data, website_url, order_index, active } = req.body;
+    const result = await pool.query(
+      `INSERT INTO partners (name, category, logo_data, website_url, order_index, active)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [name, category || null, logo_data || null, website_url || null, order_index || 0, active !== false]
+    );
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/admin/partners/:id — update
+app.put('/api/admin/partners/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, category, logo_data, website_url, order_index, active } = req.body;
+    const result = await pool.query(
+      `UPDATE partners SET name=$1, category=$2, logo_data=$3, website_url=$4, order_index=$5, active=$6
+       WHERE id=$7 RETURNING *`,
+      [name, category || null, logo_data || null, website_url || null, order_index || 0, active !== false, id]
+    );
+    if (!result.rows.length) return res.status(404).json({ success: false, message: 'Partner tidak ditemukan' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/admin/partners/:id
+app.delete('/api/admin/partners/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM partners WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Partner berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Serve built React app ───────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

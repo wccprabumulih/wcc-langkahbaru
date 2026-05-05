@@ -8,6 +8,7 @@ import Services from '../components/Services'
 import Process from '../components/Process'
 import Gallery from '../components/Gallery'
 import Testimonials from '../components/Testimonials'
+import Partners from '../components/Partners'
 import Booking from '../components/Booking'
 import Footer from '../components/Footer'
 
@@ -62,6 +63,7 @@ export default function Home() {
         <Process />
         <Gallery />
         <Testimonials />
+        <Partners />
         <Booking />
       </main>
       <Footer />
