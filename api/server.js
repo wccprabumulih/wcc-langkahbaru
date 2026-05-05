@@ -133,6 +133,24 @@ app.post('/api/admin/users/:id/role', requireAdmin, async (req, res) => {
   }
 });
 
+// DELETE /api/admin/users/:id — delete user (admin only, cannot delete self)
+app.delete('/api/admin/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (id === req.user.id) {
+      return res.status(400).json({ success: false, message: 'Tidak bisa menghapus akun sendiri' });
+    }
+    // Delete from Supabase Auth (cascades to profiles via trigger)
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(id);
+    if (error) throw error;
+    // Also remove from profiles in case trigger doesn't exist
+    await supabaseAdmin.from('profiles').delete().eq('id', id);
+    res.json({ success: true, message: 'Pengguna berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Orders ──────────────────────────────────────────────────────────────────
 
 // GET /api/orders (admin only)
