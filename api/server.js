@@ -515,6 +515,6 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`API server running on http://127.0.0.1:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`API server running on port ${PORT}`);
 });

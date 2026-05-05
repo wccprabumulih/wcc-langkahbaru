@@ -25,7 +25,9 @@ export default function Navbar() {
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 60)
-      const sections = NAV_LINKS.map(([href]) => document.querySelector(href))
+      const sections = NAV_LINKS
+        .filter(([href, , isPage]) => !isPage && href.startsWith('#'))
+        .map(([href]) => document.querySelector(href))
       let current = ''
       sections.forEach(el => {
         if (el && el.getBoundingClientRect().top <= 120) current = '#' + el.id
