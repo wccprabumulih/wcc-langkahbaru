@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 const features = [
   { icon: '🎬', title: 'Videografi Sinematik', desc: 'Setiap momen direkam dengan gaya cinematic yang elegan dan berkelas' },
   { icon: '✂️', title: 'Editing Profesional', desc: 'Hasil editing yang halus, estetik, dan siap tayang dalam waktu singkat' },
@@ -6,12 +8,29 @@ const features = [
 ]
 
 export default function About() {
+  const [imgSrc, setImgSrc] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/images')
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data['about-main']) {
+          setImgSrc(d.data['about-main'].image_data)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
   return (
     <section className="about" id="about">
       <div className="container">
         <div className="about-visual reveal-left">
           <div className="about-img-frame">
-            <div className="about-img-placeholder">📸</div>
+            {imgSrc ? (
+              <img src={imgSrc} alt="WCC Langkah Baru" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 20 }} />
+            ) : (
+              <div className="about-img-placeholder">📸</div>
+            )}
           </div>
           <div className="about-accent-card">
             <div className="ac-label">Instagram</div>

@@ -855,6 +855,58 @@ select.adm-input { appearance: none; }
 .adm-btn-danger-sm { background: rgba(255,70,70,0.06); border: 1px solid rgba(255,70,70,0.18); color: #ff7070; border-radius: 7px; padding: 5px 14px; font-family: var(--font-body); font-size: 11px; cursor: pointer; transition: all 0.2s; }
 .adm-btn-danger-sm:hover { background: rgba(255,70,70,0.12); }
 
+/* ── Image Upload Slots ──────────────────────────────────────────────────── */
+.img-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 900px) { .img-slots-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .img-slots-grid { grid-template-columns: 1fr 1fr; } }
+
+.img-slot { display: flex; flex-direction: column; gap: 8px; }
+
+.img-slot-preview {
+  width: 100%;
+  aspect-ratio: 3/4;
+  border-radius: 10px;
+  border: 2px dashed rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.02);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  overflow: hidden;
+  position: relative;
+}
+.img-slot-preview:hover {
+  border-color: var(--teal);
+  background: rgba(0,212,184,0.04);
+}
+.img-slot-preview.has-image { border-style: solid; border-color: rgba(0,212,184,0.3); }
+
+.img-slot-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px; text-align: center; }
+.img-slot-icon { font-size: 2rem; opacity: 0.3; }
+.img-slot-hint { font-size: 11px; color: var(--white-muted); line-height: 1.4; }
+
+.img-slot-loading {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+}
+.img-slot-spinner {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid rgba(0,212,184,0.2);
+  border-top-color: var(--teal);
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.img-slot-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  flex-wrap: wrap;
+}
+.img-slot-label { font-size: 11px; color: var(--white-muted); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; }
+
 /* Pengaturan */
 .adm-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .adm-settings-card { background: #0f1317; border: 1px solid var(--border); border-radius: 12px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }

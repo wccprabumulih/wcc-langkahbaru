@@ -368,6 +368,49 @@ app.delete('/api/admin/packages/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Site Images ─────────────────────────────────────────────────────────────
+
+// GET /api/images — public, returns all uploaded images
+app.get('/api/images', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT slot, image_data, label FROM site_images');
+    const map = {};
+    result.rows.forEach(r => { map[r.slot] = { image_data: r.image_data, label: r.label }; });
+    res.json({ success: true, data: map });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/admin/images/:slot — admin only, upsert image
+app.put('/api/admin/images/:slot', requireAdmin, async (req, res) => {
+  try {
+    const { slot } = req.params;
+    const { image_data, label } = req.body;
+    if (!image_data) return res.status(400).json({ success: false, message: 'image_data wajib diisi' });
+    await pool.query(
+      `INSERT INTO site_images (slot, image_data, label, updated_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (slot) DO UPDATE SET image_data=$2, label=$3, updated_at=NOW()`,
+      [slot, image_data, label || '']
+    );
+    res.json({ success: true, message: 'Foto berhasil disimpan' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/admin/images/:slot — admin only, remove image
+app.delete('/api/admin/images/:slot', requireAdmin, async (req, res) => {
+  try {
+    const { slot } = req.params;
+    await pool.query('DELETE FROM site_images WHERE slot = $1', [slot]);
+    res.json({ success: true, message: 'Foto berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Serve built React app ───────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
