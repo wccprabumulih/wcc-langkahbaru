@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
 
 interface Order {
   id: number
@@ -23,9 +22,9 @@ interface UserProfile {
   created_at: string
 }
 
-type Tab = 'orders' | 'users'
+type Page = 'orders' | 'users'
 
-const paketLabel: Record<string, string> = { silver: '🥈 Silver', gold: '🥇 Gold', premium: '💎 Premium' }
+const paketLabel: Record<string, string> = { silver: 'Silver', gold: 'Gold', premium: 'Premium' }
 const paketClass: Record<string, string> = { silver: 'pkg-silver', gold: 'pkg-gold', premium: 'pkg-premium' }
 const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
 
@@ -44,14 +43,13 @@ export default function Admin() {
   const { user, signOut, session } = useAuth()
   const navigate = useNavigate()
 
-  const [tab, setTab] = useState<Tab>('orders')
+  const [page, setPage] = useState<Page>('orders')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  // Orders state
   const [orders, setOrders] = useState<Order[]>([])
   const [filter, setFilter] = useState('')
   const [loadingOrders, setLoadingOrders] = useState(true)
 
-  // Users state
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
@@ -67,8 +65,6 @@ export default function Admin() {
       const res = await fetch(url, { headers: getAuthHeader() })
       const data = await res.json()
       if (data.success) setOrders(data.data)
-    } catch {
-      console.error('Gagal memuat orders')
     } finally {
       setLoadingOrders(false)
     }
@@ -80,46 +76,34 @@ export default function Admin() {
       const res = await fetch('/api/admin/users', { headers: getAuthHeader() })
       const data = await res.json()
       if (data.success) setUsers(data.data)
-    } catch {
-      console.error('Gagal memuat users')
     } finally {
       setLoadingUsers(false)
     }
   }
 
   useEffect(() => { loadOrders() }, [])
-  useEffect(() => { if (tab === 'users') loadUsers() }, [tab])
+  useEffect(() => { if (page === 'users') loadUsers() }, [page])
 
   const handleFilter = (f: string) => { setFilter(f); loadOrders(f) }
 
   const updateStatus = async (id: number, status: string) => {
-    try {
-      const res = await fetch(`/api/orders/${id}/status`, {
-        method: 'POST',
-        headers: getAuthHeader(),
-        body: JSON.stringify({ status }),
-      })
-      const data = await res.json()
-      if (!data.success) alert('Gagal: ' + data.message)
-      else loadOrders(filter)
-    } catch (e: any) {
-      alert('Error: ' + e.message)
-    }
+    const res = await fetch(`/api/orders/${id}/status`, {
+      method: 'POST',
+      headers: getAuthHeader(),
+      body: JSON.stringify({ status }),
+    })
+    const data = await res.json()
+    if (data.success) loadOrders(filter)
   }
 
   const updateUserRole = async (id: string, role: string) => {
-    try {
-      const res = await fetch(`/api/admin/users/${id}/role`, {
-        method: 'POST',
-        headers: getAuthHeader(),
-        body: JSON.stringify({ role }),
-      })
-      const data = await res.json()
-      if (!data.success) alert('Gagal: ' + data.message)
-      else loadUsers()
-    } catch (e: any) {
-      alert('Error: ' + e.message)
-    }
+    const res = await fetch(`/api/admin/users/${id}/role`, {
+      method: 'POST',
+      headers: getAuthHeader(),
+      body: JSON.stringify({ role }),
+    })
+    const data = await res.json()
+    if (data.success) loadUsers()
   }
 
   const handleSignOut = async () => {
@@ -135,203 +119,229 @@ export default function Admin() {
   const adminName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Admin'
   const adminInitial = adminName.charAt(0).toUpperCase()
 
+  const navItems: { key: Page; icon: string; label: string }[] = [
+    { key: 'orders', icon: '📋', label: 'Pesanan' },
+    { key: 'users',  icon: '👥', label: 'Pengguna' },
+  ]
+
   return (
-    <div className="admin-page">
-      <div className="admin-header">
-        <div>
-          <h1>Admin Dashboard — WCC <span>Langkah Baru</span></h1>
-          <p style={{ fontSize: 13, color: 'var(--white-muted)', marginTop: 4 }}>
-            Selamat datang, <strong style={{ color: 'var(--teal)' }}>{adminName}</strong>
-          </p>
+    <div className="adm-layout">
+
+      {/* Sidebar overlay (mobile) */}
+      {sidebarOpen && (
+        <div className="adm-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      {/* ── SIDEBAR ── */}
+      <aside className={`adm-sidebar${sidebarOpen ? ' open' : ''}`}>
+        <div className="adm-sidebar-logo">
+          <span className="logo-lk">LK</span>
+          <div>
+            <div className="adm-sidebar-brand">Langkah Baru</div>
+            <div className="adm-sidebar-sub">Admin Panel</div>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link to="/" style={{ fontSize: 13, color: 'var(--white-muted)' }}>← Website</Link>
-          <button onClick={handleSignOut} style={{
-            background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.2)',
-            color: '#ff7070', borderRadius: 50, padding: '8px 16px',
-            fontSize: 13, cursor: 'pointer', fontFamily: 'var(--font-body)', display: 'flex', alignItems: 'center', gap: 6
-          }}>
-            <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--teal)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900 }}>
-              {adminInitial}
+
+        <nav className="adm-nav">
+          {navItems.map(item => (
+            <button
+              key={item.key}
+              className={`adm-nav-item${page === item.key ? ' active' : ''}`}
+              onClick={() => { setPage(item.key); setSidebarOpen(false) }}
+            >
+              <span className="adm-nav-icon">{item.icon}</span>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="adm-sidebar-footer">
+          <Link to="/" className="adm-back-link">
+            ← Kembali ke Website
+          </Link>
+          <div className="adm-user-row">
+            <div className="adm-avatar">{adminInitial}</div>
+            <div className="adm-user-info">
+              <div className="adm-user-name">{adminName}</div>
+              <div className="adm-user-email">{user?.email}</div>
             </div>
+          </div>
+          <button className="adm-signout" onClick={handleSignOut}>
             Keluar
           </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Role Badge */}
-      <div style={{ padding: '0 32px 0', display: 'flex', gap: 8, alignItems: 'center' }}>
-        <span style={{
-          background: 'linear-gradient(135deg, var(--gold), #a07828)',
-          color: '#000', fontSize: 10, fontWeight: 800, letterSpacing: '2px',
-          padding: '3px 10px', borderRadius: 50, textTransform: 'uppercase'
-        }}>⚙ Admin</span>
-        <span style={{ fontSize: 12, color: 'var(--white-muted)' }}>{user?.email}</span>
-      </div>
+      {/* ── MAIN CONTENT ── */}
+      <div className="adm-main">
 
-      {/* Tabs */}
-      <div className="admin-main">
-        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 12, padding: 4, width: 'fit-content', marginBottom: 24 }}>
-          {(['orders', 'users'] as Tab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
-              padding: '8px 20px', borderRadius: 10, border: 'none', cursor: 'pointer',
-              fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600, transition: 'all 0.25s',
-              background: tab === t ? 'var(--teal)' : 'transparent',
-              color: tab === t ? '#000' : 'var(--white-muted)',
-            }}>
-              {t === 'orders' ? '📋 Pesanan' : '👥 Pengguna'}
-            </button>
-          ))}
+        {/* Topbar (mobile hamburger) */}
+        <div className="adm-topbar">
+          <button className="adm-menu-btn" onClick={() => setSidebarOpen(o => !o)}>
+            <span /><span /><span />
+          </button>
+          <span className="adm-topbar-title">
+            {page === 'orders' ? 'Pesanan' : 'Pengguna'}
+          </span>
         </div>
 
-        {/* ORDERS TAB */}
-        {tab === 'orders' && (
-          <>
-            <div className="stats-row">
-              {[['Total Pesanan', total, '📋'], ['Pending', pending, '⏳'], ['Confirmed', confirmed, '✅'], ['Done', done, '🎉']].map(([label, num, icon]) => (
-                <div key={label as string} className="stat-box">
-                  <div className="num">{icon} {num}</div>
-                  <div className="lbl">{label}</div>
-                </div>
-              ))}
-            </div>
+        <div className="adm-content">
 
-            <div className="filters">
-              {[['', 'Semua'], ['pending', '⏳ Pending'], ['confirmed', '✅ Confirmed'], ['done', '🎉 Done']].map(([val, label]) => (
-                <button key={val} className={`filter-btn${filter === val ? ' active' : ''}`} onClick={() => handleFilter(val)}>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <div className="table-wrap">
-              {loadingOrders ? (
-                <div className="admin-loading">⏳ Memuat data pesanan...</div>
-              ) : orders.length === 0 ? (
-                <div className="admin-empty">📭 Belum ada pesanan untuk filter ini.</div>
-              ) : (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th><th>Nama</th><th>WhatsApp</th><th>Tanggal Acara</th>
-                      <th>Lokasi</th><th>Paket</th><th>Catatan</th><th>Status</th><th>Dipesan</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map(o => (
-                      <tr key={o.id}>
-                        <td style={{ color: 'var(--white-muted)' }}>#{o.id}</td>
-                        <td><strong>{o.nama}</strong></td>
-                        <td>
-                          <a className="wa-link"
-                            href={`https://wa.me/${o.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent('Halo ' + o.nama + '! Konfirmasi pesanan WCC Langkah Baru ✅')}`}
-                            target="_blank" rel="noreferrer">{o.whatsapp}</a>
-                        </td>
-                        <td>{formatDate(o.tanggal)}</td>
-                        <td>{o.lokasi}</td>
-                        <td className={paketClass[o.paket] || ''}>{paketLabel[o.paket] || o.paket}</td>
-                        <td style={{ color: 'var(--white-muted)', maxWidth: 160 }}>
-                          {o.catatan ? (o.catatan.length > 60 ? o.catatan.substring(0,60) + '…' : o.catatan) : '-'}
-                        </td>
-                        <td>
-                          <select className="status-sel" value={o.status} onChange={e => updateStatus(o.id, e.target.value)}>
-                            <option value="pending">⏳ Pending</option>
-                            <option value="confirmed">✅ Confirmed</option>
-                            <option value="done">🎉 Done</option>
-                          </select>
-                        </td>
-                        <td style={{ color: 'var(--white-muted)', fontSize: 12 }}>{formatDateTime(o.created_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* USERS TAB */}
-        {tab === 'users' && (
-          <div className="table-wrap">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 13, color: 'var(--white-muted)' }}>
-                Total {users.length} pengguna terdaftar
+          {/* ── ORDERS PAGE ── */}
+          {page === 'orders' && (
+            <>
+              <div className="adm-page-header">
+                <h2 className="adm-page-title">Pesanan</h2>
+                <button className="adm-refresh" onClick={() => loadOrders(filter)}>Refresh</button>
               </div>
-              <button onClick={loadUsers} style={{
-                background: 'var(--teal-dim)', border: '1px solid var(--border-teal)',
-                color: 'var(--teal)', borderRadius: 8, padding: '6px 14px',
-                fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-body)'
-              }}>🔄 Refresh</button>
-            </div>
 
-            {loadingUsers ? (
-              <div className="admin-loading">⏳ Memuat data pengguna...</div>
-            ) : users.length === 0 ? (
-              <div className="admin-empty">📭 Belum ada pengguna terdaftar.</div>
-            ) : (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Pengguna</th><th>Email</th><th>Role</th><th>Terdaftar</th><th>Ubah Role</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(u => {
-                    const initial = (u.full_name || u.email || '?').charAt(0).toUpperCase()
-                    const isSelf = u.id === user?.id
-                    return (
-                      <tr key={u.id}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{
-                              width: 32, height: 32, borderRadius: '50%',
-                              background: u.role === 'admin' ? 'linear-gradient(135deg, var(--gold), #a07828)' : 'var(--teal)',
-                              color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 13, fontWeight: 900, flexShrink: 0
-                            }}>{initial}</div>
-                            <div>
-                              <div style={{ fontSize: 13, fontWeight: 600 }}>
-                                {u.full_name || '—'}
-                                {isSelf && <span style={{ fontSize: 10, color: 'var(--teal)', marginLeft: 6 }}>(Kamu)</span>}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ fontSize: 12, color: 'var(--white-muted)' }}>{u.email}</td>
-                        <td>
-                          <span style={{
-                            fontSize: 11, fontWeight: 700, letterSpacing: '1px',
-                            padding: '3px 10px', borderRadius: 50, textTransform: 'uppercase',
-                            background: u.role === 'admin' ? 'linear-gradient(135deg, var(--gold), #a07828)' : 'var(--teal-dim)',
-                            color: u.role === 'admin' ? '#000' : 'var(--teal)',
-                            border: u.role === 'admin' ? 'none' : '1px solid var(--border-teal)',
-                          }}>
-                            {u.role === 'admin' ? '⚙ Admin' : '👤 User'}
-                          </span>
-                        </td>
-                        <td style={{ fontSize: 12, color: 'var(--white-muted)' }}>{formatDate(u.created_at)}</td>
-                        <td>
-                          {isSelf ? (
-                            <span style={{ fontSize: 11, color: 'var(--white-muted)' }}>—</span>
-                          ) : (
-                            <select
-                              className="status-sel"
-                              value={u.role}
-                              onChange={e => updateUserRole(u.id, e.target.value)}
-                            >
-                              <option value="user">👤 User</option>
-                              <option value="admin">⚙ Admin</option>
-                            </select>
-                          )}
-                        </td>
+              <div className="adm-stats">
+                {([['Total', total], ['Pending', pending], ['Confirmed', confirmed], ['Selesai', done]] as [string, number][]).map(([label, num]) => (
+                  <div key={label} className="adm-stat">
+                    <div className="adm-stat-num">{num}</div>
+                    <div className="adm-stat-label">{label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="adm-filters">
+                {([['', 'Semua'], ['pending', 'Pending'], ['confirmed', 'Confirmed'], ['done', 'Selesai']] as [string, string][]).map(([val, label]) => (
+                  <button
+                    key={val}
+                    className={`adm-filter${filter === val ? ' active' : ''}`}
+                    onClick={() => handleFilter(val)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="adm-table-wrap">
+                {loadingOrders ? (
+                  <div className="adm-empty">Memuat data...</div>
+                ) : orders.length === 0 ? (
+                  <div className="adm-empty">Belum ada pesanan.</div>
+                ) : (
+                  <table className="adm-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Nama</th>
+                        <th>WhatsApp</th>
+                        <th>Tanggal</th>
+                        <th>Lokasi</th>
+                        <th>Paket</th>
+                        <th>Catatan</th>
+                        <th>Status</th>
+                        <th>Dipesan</th>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
+                    </thead>
+                    <tbody>
+                      {orders.map(o => (
+                        <tr key={o.id}>
+                          <td className="adm-muted">#{o.id}</td>
+                          <td><strong>{o.nama}</strong></td>
+                          <td>
+                            <a
+                              className="adm-wa-link"
+                              href={`https://wa.me/${o.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent('Halo ' + o.nama + '! Konfirmasi pesanan WCC Langkah Baru')}`}
+                              target="_blank" rel="noreferrer"
+                            >
+                              {o.whatsapp}
+                            </a>
+                          </td>
+                          <td>{formatDate(o.tanggal)}</td>
+                          <td>{o.lokasi}</td>
+                          <td className={paketClass[o.paket] || ''}>{paketLabel[o.paket] || o.paket}</td>
+                          <td className="adm-muted adm-clamp">
+                            {o.catatan ? (o.catatan.length > 50 ? o.catatan.slice(0,50) + '…' : o.catatan) : '-'}
+                          </td>
+                          <td>
+                            <select className="adm-select" value={o.status} onChange={e => updateStatus(o.id, e.target.value)}>
+                              <option value="pending">Pending</option>
+                              <option value="confirmed">Confirmed</option>
+                              <option value="done">Selesai</option>
+                            </select>
+                          </td>
+                          <td className="adm-muted adm-small">{formatDateTime(o.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ── USERS PAGE ── */}
+          {page === 'users' && (
+            <>
+              <div className="adm-page-header">
+                <h2 className="adm-page-title">Pengguna</h2>
+                <button className="adm-refresh" onClick={loadUsers}>Refresh</button>
+              </div>
+
+              <div className="adm-table-wrap">
+                {loadingUsers ? (
+                  <div className="adm-empty">Memuat data...</div>
+                ) : users.length === 0 ? (
+                  <div className="adm-empty">Belum ada pengguna.</div>
+                ) : (
+                  <table className="adm-table">
+                    <thead>
+                      <tr>
+                        <th>Pengguna</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Terdaftar</th>
+                        <th>Ubah Role</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map(u => {
+                        const initial = (u.full_name || u.email || '?').charAt(0).toUpperCase()
+                        const isSelf = u.id === user?.id
+                        return (
+                          <tr key={u.id}>
+                            <td>
+                              <div className="adm-user-cell">
+                                <div className={`adm-avatar adm-avatar-sm${u.role === 'admin' ? ' adm-avatar-admin' : ''}`}>
+                                  {initial}
+                                </div>
+                                <span>
+                                  {u.full_name || '—'}
+                                  {isSelf && <span className="adm-self-tag">kamu</span>}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="adm-muted adm-small">{u.email}</td>
+                            <td>
+                              <span className={`adm-role-badge${u.role === 'admin' ? ' admin' : ''}`}>
+                                {u.role === 'admin' ? 'Admin' : 'User'}
+                              </span>
+                            </td>
+                            <td className="adm-muted adm-small">{formatDate(u.created_at)}</td>
+                            <td>
+                              {isSelf ? (
+                                <span className="adm-muted">—</span>
+                              ) : (
+                                <select className="adm-select" value={u.role} onChange={e => updateUserRole(u.id, e.target.value)}>
+                                  <option value="user">User</option>
+                                  <option value="admin">Admin</option>
+                                </select>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>
+          )}
+
+        </div>
       </div>
     </div>
   )

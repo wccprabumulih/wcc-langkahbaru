@@ -8,7 +8,6 @@ import Home from './pages/Home'
 import Admin from './pages/Admin'
 import Auth from './pages/Auth'
 
-// Watches role changes and auto-redirects admin users to /admin
 function AdminRedirect() {
   const { user, role, loading } = useAuth()
   const navigate = useNavigate()
@@ -24,12 +23,19 @@ function AdminRedirect() {
   return null
 }
 
+// Only render the custom cursor on non-admin routes
+function ConditionalCursor() {
+  const { pathname } = useLocation()
+  if (pathname.startsWith('/admin')) return null
+  return <CustomCursor />
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AdminRedirect />
-        <CustomCursor />
+        <ConditionalCursor />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
