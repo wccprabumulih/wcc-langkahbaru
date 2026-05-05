@@ -19,7 +19,7 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement>(null)
 
-  const { user, loading, signOut } = useAuth()
+  const { user, role, loading, signOut } = useAuth()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -126,6 +126,11 @@ export default function Navbar() {
                     </div>
                   </div>
                   <div className="nav-dropdown-divider" />
+                  {role === 'admin' && (
+                    <button className="nav-dropdown-item" onClick={() => { setProfileOpen(false); navigate('/admin') }}>
+                      ⚙ Admin Panel
+                    </button>
+                  )}
                   <button className="nav-dropdown-item" onClick={() => { setProfileOpen(false); scrollTo('#booking') }}>
                     Buat Pesanan
                   </button>
