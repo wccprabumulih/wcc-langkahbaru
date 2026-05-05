@@ -143,8 +143,8 @@ export default function AdminUlasan() {
 
       <div className="adm-paket-note" style={{ marginTop: 8 }}>
         <span>
-          Ulasan baru masuk dalam status <strong style={{ color: '#f5a623' }}>tersembunyi</strong> secara default.
-          Klik <strong>"Tampilkan"</strong> untuk menayangkannya di website.
+          Ulasan baru langsung <strong style={{ color: '#7ed321' }}>ditampilkan</strong> di website secara otomatis.
+          Klik <strong>"Sembunyikan"</strong> untuk menariknya dari halaman publik — bisa ditampilkan kembali kapan saja.
         </span>
       </div>
     </>

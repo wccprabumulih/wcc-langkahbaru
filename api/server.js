@@ -201,7 +201,7 @@ pool.query(`
     name       TEXT NOT NULL,
     rating     INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
     comment    TEXT NOT NULL,
-    visible    BOOLEAN NOT NULL DEFAULT false,
+    visible    BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )
 `).catch(err => console.error('reviews table init error:', err.message));
