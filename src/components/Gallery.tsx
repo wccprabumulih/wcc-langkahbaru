@@ -1,31 +1,37 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-const SLOTS = [
-  { key: 'gallery-1', icon: '🎥', label: 'Cinematic Reel' },
-  { key: 'gallery-2', icon: '💍', label: 'Akad Nikah' },
-  { key: 'gallery-3', icon: '🌸', label: 'Moment Resepsi' },
-  { key: 'gallery-4', icon: '📱', label: 'Instagram Story' },
-  { key: 'gallery-5', icon: '✨', label: 'Pre-Wedding' },
-  { key: 'gallery-6', icon: '🎊', label: 'Highlight Video' },
-  { key: 'gallery-7', icon: '👗', label: 'Fashion Shoot' },
-  { key: 'gallery-8', icon: '🕊️', label: 'Sacred Moments' },
+const FALLBACK = [
+  { icon: '🎥', label: 'Cinematic Reel' },
+  { icon: '💍', label: 'Akad Nikah' },
+  { icon: '🌸', label: 'Moment Resepsi' },
+  { icon: '📱', label: 'Instagram Story' },
+  { icon: '✨', label: 'Pre-Wedding' },
+  { icon: '🎊', label: 'Highlight Video' },
+  { icon: '👗', label: 'Fashion Shoot' },
+  { icon: '🕊️', label: 'Sacred Moments' },
 ]
 
-interface ImageMap {
-  [slot: string]: { image_data: string; label: string }
-}
+interface Photo { id: number; image_data: string }
 
 export default function Gallery() {
-  const [images, setImages] = useState<ImageMap>({})
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [total, setTotal] = useState(0)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    fetch('/api/images')
+    fetch('/api/gallery?page=1&limit=16')
       .then(r => r.json())
-      .then(d => { if (d.success) setImages(d.data) })
+      .then(d => { if (d.success) { setPhotos(d.data); setTotal(d.total) } })
       .catch(() => {})
   }, [])
 
-  const items = [...SLOTS, ...SLOTS]
+  const hasRealPhotos = photos.length > 0
+
+  // Build track items — real photos or fallback emoji cards
+  const trackItems = hasRealPhotos
+    ? [...photos, ...photos] // duplicate for seamless loop
+    : [...FALLBACK, ...FALLBACK]
 
   return (
     <section className="gallery" id="gallery">
@@ -38,30 +44,47 @@ export default function Gallery() {
           </p>
         </div>
       </div>
+
       <div className="gallery-track-wrap">
         <div className="gallery-track">
-          {items.map((item, i) => {
-            const img = images[item.key]
-            return (
-              <div key={i} className="gallery-item">
-                {img ? (
-                  <img
-                    src={img.image_data}
-                    alt={img.label || item.label}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  />
-                ) : (
-                  <div className="gallery-item-inner">
-                    <div className="gi-icon">{item.icon}</div>
-                    <div className="gi-label">{item.label}</div>
+          {hasRealPhotos
+            ? trackItems.map((item, i) => {
+                const p = item as Photo
+                return (
+                  <div key={i} className="gallery-item" onClick={() => navigate('/galeri')}>
+                    <img src={p.image_data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <div className="gallery-overlay" />
                   </div>
-                )}
-                <div className="gallery-overlay" />
-              </div>
-            )
-          })}
+                )
+              })
+            : trackItems.map((item, i) => {
+                const f = item as typeof FALLBACK[0]
+                return (
+                  <div key={i} className="gallery-item">
+                    <div className="gallery-item-inner">
+                      <div className="gi-icon">{f.icon}</div>
+                      <div className="gi-label">{f.label}</div>
+                    </div>
+                    <div className="gallery-overlay" />
+                  </div>
+                )
+              })
+          }
         </div>
       </div>
+
+      {/* See all link */}
+      {total > 0 && (
+        <div style={{ textAlign: 'center', marginTop: 40 }}>
+          <button
+            className="btn-outline"
+            style={{ padding: '12px 36px', borderRadius: 50, fontSize: 14 }}
+            onClick={() => navigate('/galeri')}
+          >
+            Lihat Semua {total} Foto →
+          </button>
+        </div>
+      )}
     </section>
   )
 }

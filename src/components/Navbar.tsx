@@ -4,11 +4,11 @@ import { useAuth } from '../contexts/AuthContext'
 
 const WA_NUMBER = '6281532477237'
 
-const NAV_LINKS = [
+const NAV_LINKS: [string, string, boolean?][] = [
   ['#about', 'Tentang'],
   ['#services', 'Paket'],
   ['#process', 'Proses'],
-  ['#gallery', 'Galeri'],
+  ['/galeri', 'Galeri', true],
   ['#testimonials', 'Ulasan'],
 ]
 
@@ -86,12 +86,16 @@ export default function Navbar() {
 
         {/* Center links */}
         <div className="nav-center">
-          {NAV_LINKS.map(([href, label]) => (
+          {NAV_LINKS.map(([href, label, isPage]) => (
             <a
               key={href}
               href={href}
               className={`nav-link${active === href ? ' active' : ''}`}
-              onClick={e => { e.preventDefault(); scrollTo(href) }}
+              onClick={e => {
+                e.preventDefault()
+                if (isPage) navigate(href as string)
+                else scrollTo(href as string)
+              }}
             >
               {label}
             </a>
@@ -161,8 +165,12 @@ export default function Navbar() {
       <div className={`mobile-menu${menuOpen ? ' open' : ''}`}>
         <button className="mobile-menu-close" onClick={() => setMenuOpen(false)}>✕</button>
 
-        {[...NAV_LINKS, ['#booking', 'Pesan Sekarang']].map(([href, label]) => (
-          <a key={href} href={href} onClick={e => { e.preventDefault(); scrollTo(href) }}>
+        {[...NAV_LINKS, ['#booking', 'Pesan Sekarang']].map(([href, label, isPage]) => (
+          <a key={href} href={href} onClick={e => {
+            e.preventDefault()
+            if (isPage) { setMenuOpen(false); navigate(href as string) }
+            else scrollTo(href as string)
+          }}>
             {label}
           </a>
         ))}

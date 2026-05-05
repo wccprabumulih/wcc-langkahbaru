@@ -6,9 +6,10 @@ import AdminPesanan from '../admin/AdminPesanan'
 import AdminPengguna from '../admin/AdminPengguna'
 import AdminPaket from '../admin/AdminPaket'
 import AdminUlasan from '../admin/AdminUlasan'
+import AdminGaleri from '../admin/AdminGaleri'
 import AdminPengaturan from '../admin/AdminPengaturan'
 
-type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'pengaturan'
+type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'galeri' | 'pengaturan'
 
 const pageTitle: Record<Page, string> = {
   dashboard: 'Dashboard',
@@ -16,6 +17,7 @@ const pageTitle: Record<Page, string> = {
   pengguna: 'Pengguna',
   paket: 'Paket',
   ulasan: 'Ulasan',
+  galeri: 'Galeri',
   pengaturan: 'Pengaturan',
 }
 
@@ -62,6 +64,15 @@ function IconUlasan() {
     </svg>
   )
 }
+function IconGaleri() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <rect x="1" y="1" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
+      <circle cx="5" cy="5" r="1.2" stroke="currentColor" strokeWidth="1.1"/>
+      <path d="M1 10l3.5-3.5 2.5 2.5 2-2 4 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  )
+}
 function IconPengaturan() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -77,6 +88,7 @@ const navItems: { key: Page; Icon: () => JSX.Element; label: string }[] = [
   { key: 'pengguna',   Icon: IconPengguna,   label: 'Pengguna' },
   { key: 'paket',      Icon: IconPaket,      label: 'Paket' },
   { key: 'ulasan',     Icon: IconUlasan,     label: 'Ulasan' },
+  { key: 'galeri',     Icon: IconGaleri,     label: 'Galeri' },
   { key: 'pengaturan', Icon: IconPengaturan, label: 'Pengaturan' },
 ]
 
@@ -155,6 +167,7 @@ export default function Admin() {
           {page === 'pengguna'   && <AdminPengguna />}
           {page === 'paket'      && <AdminPaket />}
           {page === 'ulasan'     && <AdminUlasan />}
+          {page === 'galeri'     && <AdminGaleri />}
           {page === 'pengaturan' && <AdminPengaturan />}
         </div>
       </div>

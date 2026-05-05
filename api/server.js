@@ -368,6 +368,56 @@ app.delete('/api/admin/packages/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Gallery Photos ──────────────────────────────────────────────────────────
+
+// GET /api/gallery — public, paginated
+app.get('/api/gallery', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, parseInt(req.query.limit) || 20);
+    const offset = (page - 1) * limit;
+    const [rows, countRow] = await Promise.all([
+      pool.query('SELECT id, image_data, created_at FROM gallery_photos ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]),
+      pool.query('SELECT COUNT(*) FROM gallery_photos'),
+    ]);
+    res.json({ success: true, data: rows.rows, total: parseInt(countRow.rows[0].count), page, limit });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/admin/gallery — admin, upload one or more photos
+app.post('/api/admin/gallery', requireAdmin, async (req, res) => {
+  try {
+    const { images } = req.body; // array of base64 strings
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      return res.status(400).json({ success: false, message: 'Tidak ada foto yang dikirim' });
+    }
+    const inserted = [];
+    for (const image_data of images) {
+      const r = await pool.query(
+        'INSERT INTO gallery_photos (image_data) VALUES ($1) RETURNING id, created_at',
+        [image_data]
+      );
+      inserted.push(r.rows[0]);
+    }
+    res.json({ success: true, message: `${inserted.length} foto berhasil diupload`, data: inserted });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/admin/gallery/:id — admin, delete a photo
+app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM gallery_photos WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Foto berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Site Images ─────────────────────────────────────────────────────────────
 
 // GET /api/images — public, returns all uploaded images

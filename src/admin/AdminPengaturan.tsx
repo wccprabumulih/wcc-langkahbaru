@@ -1,19 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-const GALLERY_SLOTS = [
-  { key: 'gallery-1', label: 'Cinematic Reel' },
-  { key: 'gallery-2', label: 'Akad Nikah' },
-  { key: 'gallery-3', label: 'Moment Resepsi' },
-  { key: 'gallery-4', label: 'Instagram Story' },
-  { key: 'gallery-5', label: 'Pre-Wedding' },
-  { key: 'gallery-6', label: 'Highlight Video' },
-  { key: 'gallery-7', label: 'Fashion Shoot' },
-  { key: 'gallery-8', label: 'Sacred Moments' },
-]
-
-interface ImageMap { [slot: string]: { image_data: string; label: string } }
-
 function compressImage(file: File, maxW = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -25,8 +12,7 @@ function compressImage(file: File, maxW = 1200, quality = 0.82): Promise<string>
         const h = Math.round(img.height * scale)
         const canvas = document.createElement('canvas')
         canvas.width = w; canvas.height = h
-        const ctx = canvas.getContext('2d')!
-        ctx.drawImage(img, 0, 0, w, h)
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h)
         resolve(canvas.toDataURL('image/jpeg', quality))
       }
       img.onerror = reject
@@ -37,39 +23,33 @@ function compressImage(file: File, maxW = 1200, quality = 0.82): Promise<string>
   })
 }
 
-function ImageSlot({
-  slot, label, imageData, token,
-  onSaved, onDeleted,
-}: {
-  slot: string
-  label: string
-  imageData: string | null
-  token: string
-  onSaved: (slot: string, data: string) => void
-  onDeleted: (slot: string) => void
-}) {
+function AboutPhotoSlot({ token }: { token: string }) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [imgSrc, setImgSrc] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
+  useEffect(() => {
+    fetch('/api/images').then(r => r.json()).then(d => {
+      if (d.success && d.data['about-main']) setImgSrc(d.data['about-main'].image_data)
+    }).catch(() => {})
+  }, [])
+
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setMsg({ type: 'err', text: 'File harus berupa gambar.' })
-      return
-    }
+    if (!file.type.startsWith('image/')) { setMsg({ type: 'err', text: 'File harus berupa gambar.' }); return }
     setLoading(true); setMsg(null)
     try {
       const compressed = await compressImage(file)
-      const res = await fetch(`/api/admin/images/${slot}`, {
+      const res = await fetch('/api/admin/images/about-main', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ image_data: compressed, label }),
+        body: JSON.stringify({ image_data: compressed, label: 'Foto Tentang Kami' }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
-      onSaved(slot, compressed)
-      setMsg({ type: 'ok', text: 'Tersimpan!' })
-      setTimeout(() => setMsg(null), 2000)
+      setImgSrc(compressed)
+      setMsg({ type: 'ok', text: 'Foto berhasil disimpan!' })
+      setTimeout(() => setMsg(null), 2500)
     } catch (err: unknown) {
       setMsg({ type: 'err', text: err instanceof Error ? err.message : 'Gagal.' })
     } finally {
@@ -80,14 +60,14 @@ function ImageSlot({
   const handleDelete = async () => {
     setLoading(true); setMsg(null)
     try {
-      const res = await fetch(`/api/admin/images/${slot}`, {
+      const res = await fetch('/api/admin/images/about-main', {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
-      onDeleted(slot)
-      setMsg({ type: 'ok', text: 'Dihapus!' })
+      setImgSrc(null)
+      setMsg({ type: 'ok', text: 'Foto dihapus.' })
       setTimeout(() => setMsg(null), 2000)
     } catch (err: unknown) {
       setMsg({ type: 'err', text: err instanceof Error ? err.message : 'Gagal.' })
@@ -97,45 +77,33 @@ function ImageSlot({
   }
 
   return (
-    <div className="img-slot">
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
       <div
-        className={`img-slot-preview${imageData ? ' has-image' : ''}`}
+        className={`img-slot-preview${imgSrc ? ' has-image' : ''}`}
+        style={{ width: 200, flexShrink: 0 }}
         onClick={() => !loading && inputRef.current?.click()}
         onDragOver={e => e.preventDefault()}
-        onDrop={e => {
-          e.preventDefault()
-          const file = e.dataTransfer.files[0]
-          if (file) handleFile(file)
-        }}
+        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
       >
-        {imageData ? (
-          <img src={imageData} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
-        ) : (
-          <div className="img-slot-empty">
-            <span className="img-slot-icon">📷</span>
-            <span className="img-slot-hint">Klik atau drag foto</span>
-          </div>
-        )}
-        {loading && (
-          <div className="img-slot-loading">
-            <div className="img-slot-spinner" />
-          </div>
-        )}
+        {imgSrc
+          ? <img src={imgSrc} alt="About" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+          : <div className="img-slot-empty"><span className="img-slot-icon">📷</span><span className="img-slot-hint">Klik atau drag foto</span></div>
+        }
+        {loading && <div className="img-slot-loading"><div className="img-slot-spinner" /></div>}
       </div>
-      <div className="img-slot-footer">
-        <span className="img-slot-label">{label}</span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button className="adm-refresh" style={{ padding: '4px 10px', fontSize: 11 }} onClick={() => inputRef.current?.click()} disabled={loading}>
-            {imageData ? 'Ganti' : 'Upload'}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center' }}>
+        <p className="adm-muted adm-small" style={{ lineHeight: 1.7 }}>
+          Foto ini tampil di section <strong style={{ color: 'var(--white)' }}>"Tentang Kami"</strong> halaman utama.<br />
+          Format JPG/PNG, otomatis dikompres.
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="adm-refresh" style={{ padding: '7px 16px' }} onClick={() => inputRef.current?.click()} disabled={loading}>
+            {imgSrc ? 'Ganti Foto' : 'Upload Foto'}
           </button>
-          {imageData && (
-            <button className="adm-btn-danger-sm" style={{ padding: '4px 10px', fontSize: 11 }} onClick={handleDelete} disabled={loading}>
-              Hapus
-            </button>
-          )}
+          {imgSrc && <button className="adm-btn-danger-sm" onClick={handleDelete} disabled={loading}>Hapus</button>}
         </div>
+        {msg && <div className={`adm-settings-msg ${msg.type}`} style={{ fontSize: 12, padding: '6px 12px' }}>{msg.text}</div>}
       </div>
-      {msg && <div className={`adm-settings-msg ${msg.type}`} style={{ marginTop: 4, fontSize: 11, padding: '6px 10px' }}>{msg.text}</div>}
       <input ref={inputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = '' }} />
     </div>
   )
@@ -146,15 +114,10 @@ export default function AdminPengaturan() {
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
   const [pwMsg, setPwMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
   const [pwLoading, setPwLoading] = useState(false)
-  const [images, setImages] = useState<ImageMap>({})
   const [token, setToken] = useState('')
 
   const adminName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Admin'
   const adminInitial = adminName.charAt(0).toUpperCase()
-
-  useEffect(() => {
-    fetch('/api/images').then(r => r.json()).then(d => { if (d.success) setImages(d.data) }).catch(() => {})
-  }, [])
 
   useEffect(() => {
     import('@supabase/supabase-js').then(({ createClient }) => {
@@ -183,13 +146,6 @@ export default function AdminPengaturan() {
     } finally {
       setPwLoading(false)
     }
-  }
-
-  const handleSaved = (slot: string, data: string) => {
-    setImages(prev => ({ ...prev, [slot]: { image_data: data, label: '' } }))
-  }
-  const handleDeleted = (slot: string) => {
-    setImages(prev => { const next = { ...prev }; delete next[slot]; return next })
   }
 
   return (
@@ -243,43 +199,10 @@ export default function AdminPengaturan() {
           </form>
         </div>
 
-        {/* Photo — About */}
+        {/* About photo */}
         <div className="adm-settings-card" style={{ gridColumn: '1 / -1' }}>
           <div className="adm-settings-card-title">📸 Foto Tentang Kami</div>
-          <p className="adm-muted adm-small" style={{ marginBottom: 16 }}>
-            Foto ini tampil di section "Tentang Kami" halaman utama. Format JPG/PNG, otomatis dikompres.
-          </p>
-          <div style={{ maxWidth: 260 }}>
-            <ImageSlot
-              slot="about-main"
-              label="Foto Tentang Kami"
-              imageData={images['about-main']?.image_data ?? null}
-              token={token}
-              onSaved={handleSaved}
-              onDeleted={handleDeleted}
-            />
-          </div>
-        </div>
-
-        {/* Photo — Gallery */}
-        <div className="adm-settings-card" style={{ gridColumn: '1 / -1' }}>
-          <div className="adm-settings-card-title">🖼️ Foto Galeri (8 Slot)</div>
-          <p className="adm-muted adm-small" style={{ marginBottom: 20 }}>
-            Foto-foto ini tampil di section Galeri yang berjalan otomatis. Klik slot untuk upload, drag & drop juga didukung.
-          </p>
-          <div className="img-slots-grid">
-            {GALLERY_SLOTS.map(s => (
-              <ImageSlot
-                key={s.key}
-                slot={s.key}
-                label={s.label}
-                imageData={images[s.key]?.image_data ?? null}
-                token={token}
-                onSaved={handleSaved}
-                onDeleted={handleDeleted}
-              />
-            ))}
-          </div>
+          <AboutPhotoSlot token={token} />
         </div>
 
         {/* Danger zone */}
