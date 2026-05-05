@@ -23,11 +23,10 @@ function AdminRedirect() {
   return null
 }
 
-// Only render the custom cursor on non-admin routes
-function ConditionalCursor() {
+// Always mounted — just disabled on admin routes to avoid flicker
+function AppCursor() {
   const { pathname } = useLocation()
-  if (pathname.startsWith('/admin')) return null
-  return <CustomCursor />
+  return <CustomCursor disabled={pathname.startsWith('/admin')} />
 }
 
 export default function App() {
@@ -35,7 +34,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AdminRedirect />
-        <ConditionalCursor />
+        <AppCursor />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />

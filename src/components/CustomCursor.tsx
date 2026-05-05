@@ -1,8 +1,26 @@
 import { useEffect, useRef } from 'react'
 
-export default function CustomCursor() {
+interface Props {
+  disabled?: boolean
+}
+
+export default function CustomCursor({ disabled = false }: Props) {
   const dotRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
+
+  // Toggle visibility and native cursor when disabled changes
+  useEffect(() => {
+    const dot = dotRef.current
+    const ring = ringRef.current
+    if (!dot || !ring) return
+    if (disabled) {
+      dot.style.opacity = '0'
+      ring.style.opacity = '0'
+      document.body.style.cursor = ''
+    } else {
+      document.body.style.cursor = 'none'
+    }
+  }, [disabled])
 
   useEffect(() => {
     const dot = dotRef.current
@@ -15,6 +33,7 @@ export default function CustomCursor() {
     let animId: number
 
     const show = () => {
+      if (disabled) return
       if (!visible) {
         visible = true
         dot.style.opacity = '1'
@@ -29,6 +48,7 @@ export default function CustomCursor() {
     }
 
     const onMove = (e: MouseEvent) => {
+      if (disabled) return
       mouseX = e.clientX
       mouseY = e.clientY
       dot.style.left = mouseX + 'px'
@@ -37,7 +57,7 @@ export default function CustomCursor() {
     }
 
     const onLeave = () => hide()
-    const onEnter = () => show()
+    const onEnter = () => { if (!disabled) show() }
 
     const animate = () => {
       ringX += (mouseX - ringX) * 0.12
@@ -62,7 +82,6 @@ export default function CustomCursor() {
 
     addHoverListeners()
 
-    // Re-attach after dynamic content
     const observer = new MutationObserver(addHoverListeners)
     observer.observe(document.body, { childList: true, subtree: true })
 
@@ -72,6 +91,7 @@ export default function CustomCursor() {
       document.documentElement.removeEventListener('mouseenter', onEnter)
       cancelAnimationFrame(animId)
       observer.disconnect()
+      document.body.style.cursor = ''
     }
   }, [])
 
