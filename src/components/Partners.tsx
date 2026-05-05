@@ -41,10 +41,10 @@ export default function Partners() {
     >
       <div className="container">
         <div className="partners-header">
-          <div className="partners-eyebrow">Ekosistem Wedding Terbaik</div>
+          <div className="partners-eyebrow">Mitra Kami</div>
           <h2 className="partners-title">Dipercaya Bersama</h2>
           <p className="partners-sub">
-            Kami berkolaborasi dengan vendor &amp; mitra terpilih untuk menghadirkan pernikahan yang sempurna.
+            Didukung oleh mitra &amp; platform terpilih yang kami percaya.
           </p>
         </div>
       </div>
