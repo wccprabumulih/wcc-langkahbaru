@@ -1,8 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 const WA_NUMBER = '6281532477237'
 
 export default function Hero() {
+  const [heroImg, setHeroImg] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/images')
+      .then(r => r.json())
+      .then(d => {
+        if (d.success && d.data['hero-main']) setHeroImg(d.data['hero-main'].image_data)
+      })
+      .catch(() => {})
+  }, [])
+
   useEffect(() => {
     const orbs = document.querySelectorAll('.orb')
     const onScroll = () => {
@@ -52,11 +63,23 @@ export default function Hero() {
           <div className="hero-card-stack">
             <div className="hero-card hero-card-back2" />
             <div className="hero-card hero-card-back" />
-            <div className="hero-card hero-card-main">
-              <div className="card-logo">LK</div>
-              <div className="card-brand">Langkah Baru</div>
-              <div className="card-divider" />
-              <div className="card-tagline">Wedding Content Creator</div>
+            <div className={`hero-card hero-card-main${heroImg ? ' hero-card-has-photo' : ''}`}>
+              {heroImg ? (
+                <>
+                  <img src={heroImg} alt="Hero" className="hero-card-photo" />
+                  <div className="hero-card-photo-overlay">
+                    <div className="card-logo">LK</div>
+                    <div className="card-tagline">Wedding Content Creator</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="card-logo">LK</div>
+                  <div className="card-brand">Langkah Baru</div>
+                  <div className="card-divider" />
+                  <div className="card-tagline">Wedding Content Creator</div>
+                </>
+              )}
             </div>
             <div className="hero-badge">
               <span className="badge-icon">🎬</span>

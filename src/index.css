@@ -303,6 +303,11 @@ body::before {
 .hero-card-stack { position: relative; width: 340px; height: 440px; }
 .hero-card { position: absolute; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; transition: transform 0.5s var(--transition); }
 .hero-card-main { width: 260px; height: 360px; top: 40px; left: 40px; z-index: 3; background: linear-gradient(135deg, #0d1520 0%, #0a1218 100%); border-color: var(--border-teal); box-shadow: 0 0 60px rgba(0,212,184,0.15), 0 30px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px; animation: hero-card-float 6s ease-in-out infinite; }
+.hero-card-has-photo { padding: 0; }
+.hero-card-photo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 20px; display: block; }
+.hero-card-photo-overlay { position: absolute; inset: 0; border-radius: 20px; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 50%, transparent 100%); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 24px; gap: 4px; }
+.hero-card-photo-overlay .card-logo { font-family: var(--font-serif); font-size: 2.2rem; font-weight: 900; color: var(--teal); line-height: 1; }
+.hero-card-photo-overlay .card-tagline { font-family: var(--font-italic); font-size: 0.85rem; color: rgba(255,255,255,0.8); text-align: center; font-style: italic; }
 @keyframes hero-card-float { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(-2deg); } }
 .hero-card-main .card-logo { font-family: var(--font-serif); font-size: 3.5rem; font-weight: 900; color: var(--teal); margin-bottom: 8px; line-height: 1; }
 .hero-card-main .card-brand { font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: var(--white-muted); margin-bottom: 32px; }

@@ -24,7 +24,17 @@ function compressImage(file: File, maxW = 1200, quality = 0.82): Promise<string>
   })
 }
 
-function AboutPhotoSlot({ token }: { token: string }) {
+function PhotoSlot({
+  token,
+  slot,
+  label,
+  description,
+}: {
+  token: string
+  slot: string
+  label: string
+  description: string
+}) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [imgSrc, setImgSrc] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -32,9 +42,9 @@ function AboutPhotoSlot({ token }: { token: string }) {
 
   useEffect(() => {
     fetch('/api/images').then(r => r.json()).then(d => {
-      if (d.success && d.data['about-main']) setImgSrc(d.data['about-main'].image_data)
+      if (d.success && d.data[slot]) setImgSrc(d.data[slot].image_data)
     }).catch(() => {})
-  }, [])
+  }, [slot])
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) { setMsg({ type: 'err', text: 'File harus berupa gambar.' }); return }
@@ -42,10 +52,10 @@ function AboutPhotoSlot({ token }: { token: string }) {
     setLoading(true); setMsg(null)
     try {
       const compressed = await compressImage(file)
-      const res = await fetch('/api/admin/images/about-main', {
+      const res = await fetch(`/api/admin/images/${slot}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ image_data: compressed, label: 'Foto Tentang Kami' }),
+        body: JSON.stringify({ image_data: compressed, label }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
@@ -63,7 +73,7 @@ function AboutPhotoSlot({ token }: { token: string }) {
     if (!token) { setMsg({ type: 'err', text: 'Sesi tidak ditemukan. Silakan login ulang.' }); return }
     setLoading(true); setMsg(null)
     try {
-      const res = await fetch('/api/admin/images/about-main', {
+      const res = await fetch(`/api/admin/images/${slot}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -89,16 +99,15 @@ function AboutPhotoSlot({ token }: { token: string }) {
         onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
       >
         {imgSrc
-          ? <img src={imgSrc} alt="About" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+          ? <img src={imgSrc} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
           : <div className="img-slot-empty"><span className="img-slot-icon">📷</span><span className="img-slot-hint">Klik atau drag foto</span></div>
         }
         {loading && <div className="img-slot-loading"><div className="img-slot-spinner" /></div>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center' }}>
-        <p className="adm-muted adm-small" style={{ lineHeight: 1.7 }}>
-          Foto ini tampil di section <strong style={{ color: 'var(--white)' }}>"Tentang Kami"</strong> halaman utama.<br />
-          Format JPG/PNG, otomatis dikompres.
-        </p>
+        <p className="adm-muted adm-small" style={{ lineHeight: 1.7 }}
+          dangerouslySetInnerHTML={{ __html: description }}
+        />
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="adm-refresh" style={{ padding: '7px 16px' }} onClick={() => inputRef.current?.click()} disabled={loading}>
             {imgSrc ? 'Ganti Foto' : 'Upload Foto'}
@@ -111,6 +120,7 @@ function AboutPhotoSlot({ token }: { token: string }) {
     </div>
   )
 }
+
 
 export default function AdminPengaturan() {
   const { user, session, signOut } = useAuth()
@@ -192,10 +202,26 @@ export default function AdminPengaturan() {
           </form>
         </div>
 
+        {/* Hero photo */}
+        <div className="adm-settings-card" style={{ gridColumn: '1 / -1' }}>
+          <div className="adm-settings-card-title">🖼️ Foto Hero (Kartu Visual Utama)</div>
+          <PhotoSlot
+            token={token}
+            slot="hero-main"
+            label="Foto Hero"
+            description={`Foto ini tampil di <strong style="color:var(--white)">kartu visual</strong> pada section Hero halaman utama.<br />Gunakan foto portrait pernikahan untuk hasil terbaik. Format JPG/PNG, otomatis dikompres.`}
+          />
+        </div>
+
         {/* About photo */}
         <div className="adm-settings-card" style={{ gridColumn: '1 / -1' }}>
           <div className="adm-settings-card-title">📸 Foto Tentang Kami</div>
-          <AboutPhotoSlot token={token} />
+          <PhotoSlot
+            token={token}
+            slot="about-main"
+            label="Foto Tentang Kami"
+            description={`Foto ini tampil di section <strong style="color:var(--white)">"Tentang Kami"</strong> halaman utama.<br />Format JPG/PNG, otomatis dikompres.`}
+          />
         </div>
 
         {/* Danger zone */}
