@@ -218,7 +218,7 @@ app.post('/api/reviews', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Rating harus antara 1–5' });
     }
     await pool.query(
-      'INSERT INTO reviews (name, rating, comment) VALUES ($1, $2, $3)',
+      'INSERT INTO reviews (name, rating, comment, visible) VALUES ($1, $2, $3, true)',
       [name.trim(), r, comment.trim()]
     );
     res.json({ success: true, message: 'Ulasan berhasil dikirim! Terima kasih 🙏' });
