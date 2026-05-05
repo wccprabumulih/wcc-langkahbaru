@@ -551,7 +551,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 }
 @media (max-width: 768px) {
   .navbar { width: calc(100% - 32px); padding: 8px 8px 8px 18px; top: max(10px, calc(env(safe-area-inset-top) + 8px)); }
-  .nav-center, .nav-dot-sep, .btn-nav-cta { display: none; }
+  .nav-center, .nav-dot-sep { display: none; }
+  .btn-nav-cta { padding: 8px 16px; font-size: 12px; }
   .hamburger { display: flex; }
   .services-grid { grid-template-columns: 1fr; }
   .testi-grid { grid-template-columns: 1fr; }
