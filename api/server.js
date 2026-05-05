@@ -9,7 +9,7 @@ import fs from 'fs';
 
 const { Pool } = pg;
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
 // Supabase PostgreSQL (transaction pooler)
 const pool = new Pool({
