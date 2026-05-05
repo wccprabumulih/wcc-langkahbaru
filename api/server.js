@@ -11,10 +11,11 @@ const { Pool } = pg;
 const app = express();
 const PORT = 3001;
 
-// Replit PostgreSQL — orders table
+// Supabase PostgreSQL (transaction pooler)
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: false
+  connectionString: process.env.SUPABASE_DB_URL,
+  ssl: { rejectUnauthorized: false },
+  max: 10,
 });
 
 // Supabase Admin client (service role — server only)
