@@ -771,20 +771,87 @@ select.adm-input { appearance: none; }
 }
 .adm-btn-cancel:hover { border-color: rgba(255,255,255,0.2); color: var(--white); }
 
-/* Ulasan */
-.adm-ulasan-coming { display: flex; align-items: center; }
+/* Ulasan — admin */
 .adm-coming-badge { font-size: 10px; font-weight: 700; padding: 4px 12px; background: rgba(245,166,35,0.1); color: #f5a623; border: 1px solid rgba(245,166,35,0.2); border-radius: 50px; letter-spacing: 1px; text-transform: uppercase; }
-.adm-ulasan-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-.adm-ulasan-card { background: #0f1317; border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; }
+.adm-ulasan-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.adm-ulasan-card { background: #0f1317; border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; transition: opacity 0.2s; }
+.adm-ulasan-hidden { opacity: 0.5; }
 .adm-ulasan-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .adm-ulasan-nama { font-size: 14px; font-weight: 600; color: var(--white); }
 .adm-ulasan-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .adm-ulasan-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
-.adm-rating-dots { display: flex; gap: 4px; align-items: center; }
-.adm-rating-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); }
-.adm-rating-dot.filled { background: var(--gold); border-color: var(--gold); }
 .adm-ulasan-komentar { font-size: 13px; color: var(--white-muted); line-height: 1.6; font-style: italic; }
 .adm-ulasan-actions { display: flex; gap: 8px; }
+
+/* Testimonials — public review form */
+.testi-stars-display { color: var(--gold); font-size: 14px; letter-spacing: 2px; margin-bottom: 16px; }
+.testi-form-wrap {
+  margin-top: 64px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 36px 40px;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.testi-form-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 24px;
+}
+.testi-form { display: flex; flex-direction: column; gap: 16px; }
+.testi-form-row { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: start; }
+.testi-form-field { display: flex; flex-direction: column; gap: 7px; }
+.testi-form-field--rating { align-items: flex-start; }
+.testi-form-flabel { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); }
+.testi-form-input {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.testi-form-input::placeholder { color: rgba(255,255,255,0.18); }
+.testi-form-input:focus { border-color: var(--teal); }
+.testi-form-textarea { resize: none; line-height: 1.6; }
+.testi-form-msg { font-size: 13px; padding: 10px 14px; border-radius: 8px; }
+.testi-form-msg--ok { background: rgba(126,211,33,0.08); border: 1px solid rgba(126,211,33,0.2); color: #7ed321; }
+.testi-form-msg--err { background: rgba(255,70,70,0.08); border: 1px solid rgba(255,70,70,0.2); color: #ff7070; }
+.testi-form-btn {
+  align-self: flex-start;
+  background: var(--teal);
+  color: #000;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 28px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.testi-form-btn:hover { opacity: 0.85; }
+.testi-form-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.testi-form-thanks {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: var(--white);
+}
+.testi-form-thanks p { font-size: 13px; color: var(--white-muted); margin-top: 4px; }
+@media (max-width: 600px) {
+  .testi-form-wrap { padding: 24px 20px; }
+  .testi-form-row { grid-template-columns: 1fr; }
+}
 .adm-btn-danger-sm { background: rgba(255,70,70,0.06); border: 1px solid rgba(255,70,70,0.18); color: #ff7070; border-radius: 7px; padding: 5px 14px; font-family: var(--font-body); font-size: 11px; cursor: pointer; transition: all 0.2s; }
 .adm-btn-danger-sm:hover { background: rgba(255,70,70,0.12); }
 

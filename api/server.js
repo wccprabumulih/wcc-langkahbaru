@@ -192,6 +192,89 @@ app.post('/api/orders/:id/status', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+// Ensure reviews table exists
+pool.query(`
+  CREATE TABLE IF NOT EXISTS reviews (
+    id         SERIAL PRIMARY KEY,
+    name       TEXT NOT NULL,
+    rating     INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    comment    TEXT NOT NULL,
+    visible    BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )
+`).catch(err => console.error('reviews table init error:', err.message));
+
+// POST /api/reviews — public, submit a review
+app.post('/api/reviews', async (req, res) => {
+  try {
+    const { name, rating, comment } = req.body;
+    if (!name || !rating || !comment) {
+      return res.status(400).json({ success: false, message: 'Nama, rating, dan komentar wajib diisi' });
+    }
+    const r = parseInt(rating);
+    if (r < 1 || r > 5) {
+      return res.status(400).json({ success: false, message: 'Rating harus antara 1–5' });
+    }
+    await pool.query(
+      'INSERT INTO reviews (name, rating, comment) VALUES ($1, $2, $3)',
+      [name.trim(), r, comment.trim()]
+    );
+    res.json({ success: true, message: 'Ulasan berhasil dikirim! Terima kasih 🙏' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/reviews — public, visible reviews only
+app.get('/api/reviews', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, name, rating, comment, created_at FROM reviews WHERE visible = true ORDER BY created_at DESC'
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/admin/reviews — admin, all reviews
+app.get('/api/admin/reviews', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM reviews ORDER BY created_at DESC');
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/admin/reviews/:id/visible — toggle visible
+app.put('/api/admin/reviews/:id/visible', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      'UPDATE reviews SET visible = NOT visible WHERE id = $1 RETURNING visible',
+      [id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ success: false, message: 'Ulasan tidak ditemukan' });
+    res.json({ success: true, visible: result.rows[0].visible });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/admin/reviews/:id
+app.delete('/api/admin/reviews/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM reviews WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Ulasan berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Packages ────────────────────────────────────────────────────────────────
 
 // GET /api/packages — public, returns active packages

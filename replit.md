@@ -14,7 +14,7 @@ This app provides:
 - **Frontend**: React 18 + TypeScript + Vite (port 5000)
 - **Backend**: Express.js API (port 3001, proxied via `/api`)
 - **Auth**: Supabase Auth with RBAC (admin / user roles via `profiles` table in Supabase)
-- **Database**: Replit PostgreSQL (`orders`, `packages` tables)
+- **Database**: Replit PostgreSQL (`orders`, `packages`, `reviews` tables)
 - **Styling**: Custom CSS with Gold/Teal premium theme
 
 ## Project Structure
@@ -95,6 +95,11 @@ This app provides:
 | DELETE | /api/admin/packages/:id | Admin | Delete package |
 | GET | /api/admin/users | Admin | List all users with roles |
 | POST | /api/admin/users/:id/role | Admin | Update user role |
+| POST | /api/reviews | None | Submit a review (public) |
+| GET | /api/reviews | None | List visible reviews (public) |
+| GET | /api/admin/reviews | Admin | List all reviews |
+| PUT | /api/admin/reviews/:id/visible | Admin | Toggle review visibility |
+| DELETE | /api/admin/reviews/:id | Admin | Delete a review |
 
 ## Environment Variables / Secrets
 

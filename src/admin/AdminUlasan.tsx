@@ -1,81 +1,151 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useAuth } from '../contexts/AuthContext'
 
-const dummyUlasan = [
-  { id: 1, nama: 'Rizky & Farah', paket: 'Gold', rating: 5, komentar: 'Hasilnya luar biasa! Tim sangat profesional dan ramah. Video highlight kami membuat semua tamu menangis terharu.', tanggal: '2025-03-15', status: 'published' },
-  { id: 2, nama: 'Budi & Sari', paket: 'Premium', rating: 5, komentar: 'Drone footage-nya amazing banget. Sudah rekomendasiin ke semua teman yang mau nikah.', tanggal: '2025-04-02', status: 'published' },
-  { id: 3, nama: 'Andi & Maya', paket: 'Silver', rating: 4, komentar: 'Hasil foto dan video bagus, pengiriman tepat waktu. Puas dengan pelayanannya!', tanggal: '2025-04-20', status: 'published' },
-  { id: 4, nama: 'Dimas & Rini', paket: 'Gold', rating: 5, komentar: 'Best investment for our wedding! The team captured every precious moment perfectly.', tanggal: '2025-05-01', status: 'pending' },
-]
+interface Review {
+  id: number
+  name: string
+  rating: number
+  comment: string
+  visible: boolean
+  created_at: string
+}
 
-function RatingDots({ rating }: { rating: number }) {
+function Stars({ rating }: { rating: number }) {
   return (
-    <div className="adm-rating-dots">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <span key={i} className={`adm-rating-dot${i < rating ? ' filled' : ''}`} />
-      ))}
-    </div>
+    <span style={{ color: '#f5a623', fontSize: 13, letterSpacing: 1 }}>
+      {'★'.repeat(rating)}{'☆'.repeat(5 - rating)}
+    </span>
   )
 }
 
-export default function AdminUlasan() {
-  const [ulasan] = useState(dummyUlasan)
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 
-  const published = ulasan.filter(u => u.status === 'published').length
-  const pending = ulasan.filter(u => u.status === 'pending').length
+export default function AdminUlasan() {
+  const { session } = useAuth()
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [loading, setLoading] = useState(true)
+  const [toggling, setToggling] = useState<number | null>(null)
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session?.access_token}`,
+  }
+
+  const load = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/admin/reviews', { headers })
+      const data = await res.json()
+      if (data.success) setReviews(data.data)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [])
+
+  const handleToggle = async (review: Review) => {
+    setToggling(review.id)
+    try {
+      const res = await fetch(`/api/admin/reviews/${review.id}/visible`, { method: 'PUT', headers })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message)
+      setReviews(rs => rs.map(r => r.id === review.id ? { ...r, visible: data.visible } : r))
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Gagal mengubah status.')
+    } finally {
+      setToggling(null)
+    }
+  }
+
+  const handleDelete = async (review: Review) => {
+    if (!confirm(`Hapus ulasan dari "${review.name}"?`)) return
+    try {
+      const res = await fetch(`/api/admin/reviews/${review.id}`, { method: 'DELETE', headers })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message)
+      setReviews(rs => rs.filter(r => r.id !== review.id))
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Gagal menghapus.')
+    }
+  }
+
+  const visible = reviews.filter(r => r.visible).length
+  const hidden = reviews.filter(r => !r.visible).length
 
   return (
     <>
       <div className="adm-page-header">
         <h2 className="adm-page-title">Ulasan</h2>
-        <span className="adm-coming-badge">Preview Data</span>
+        <button className="adm-refresh" onClick={load}>↻ Refresh</button>
       </div>
 
-      <div className="adm-stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="adm-stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 24 }}>
         <div className="adm-stat">
-          <div className="adm-stat-num">{ulasan.length}</div>
+          <div className="adm-stat-num">{reviews.length}</div>
           <div className="adm-stat-label">Total Ulasan</div>
         </div>
         <div className="adm-stat">
-          <div className="adm-stat-num" style={{ color: '#7ed321' }}>{published}</div>
+          <div className="adm-stat-num" style={{ color: '#7ed321' }}>{visible}</div>
           <div className="adm-stat-label">Ditampilkan</div>
         </div>
         <div className="adm-stat">
-          <div className="adm-stat-num" style={{ color: '#f5a623' }}>{pending}</div>
-          <div className="adm-stat-label">Menunggu</div>
+          <div className="adm-stat-num" style={{ color: '#f5a623' }}>{hidden}</div>
+          <div className="adm-stat-label">Disembunyikan</div>
         </div>
       </div>
 
-      <div className="adm-ulasan-list">
-        {ulasan.map(u => (
-          <div key={u.id} className="adm-ulasan-card">
-            <div className="adm-ulasan-top">
-              <div className="adm-ulasan-info">
-                <div className="adm-ulasan-nama">{u.nama}</div>
-                <div className="adm-ulasan-meta">
-                  <span className={`pkg-${u.paket.toLowerCase()}`}>{u.paket}</span>
-                  <span className="adm-muted adm-small">· {u.tanggal}</span>
+      {loading ? (
+        <div className="adm-empty">Memuat ulasan...</div>
+      ) : reviews.length === 0 ? (
+        <div className="adm-empty">
+          Belum ada ulasan yang masuk. Ulasan dari pengunjung akan muncul di sini.
+        </div>
+      ) : (
+        <div className="adm-ulasan-list">
+          {reviews.map(r => (
+            <div key={r.id} className={`adm-ulasan-card${r.visible ? '' : ' adm-ulasan-hidden'}`}>
+              <div className="adm-ulasan-top">
+                <div className="adm-ulasan-info">
+                  <div className="adm-ulasan-nama">{r.name}</div>
+                  <div className="adm-ulasan-meta">
+                    <Stars rating={r.rating} />
+                    <span className="adm-muted adm-small">· {formatDate(r.created_at)}</span>
+                  </div>
+                </div>
+                <div className="adm-ulasan-right">
+                  <span className={`adm-status-badge ${r.visible ? 'adm-status-confirmed' : 'adm-status-pending'}`}>
+                    {r.visible ? '👁 Ditampilkan' : '🙈 Tersembunyi'}
+                  </span>
                 </div>
               </div>
-              <div className="adm-ulasan-right">
-                <RatingDots rating={u.rating} />
-                <span className={`adm-status-badge adm-status-${u.status === 'published' ? 'confirmed' : 'pending'}`}>
-                  {u.status === 'published' ? 'Ditampilkan' : 'Menunggu'}
-                </span>
+
+              <p className="adm-ulasan-komentar">"{r.comment}"</p>
+
+              <div className="adm-ulasan-actions">
+                <button
+                  className="adm-refresh"
+                  onClick={() => handleToggle(r)}
+                  disabled={toggling === r.id}
+                >
+                  {toggling === r.id ? '...' : r.visible ? 'Sembunyikan' : 'Tampilkan'}
+                </button>
+                <button className="adm-btn-danger-sm" onClick={() => handleDelete(r)}>
+                  Hapus
+                </button>
               </div>
             </div>
-            <p className="adm-ulasan-komentar">"{u.komentar}"</p>
-            <div className="adm-ulasan-actions">
-              {u.status === 'pending' && (
-                <button className="adm-refresh">Tampilkan</button>
-              )}
-              <button className="adm-btn-danger-sm">Hapus</button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      <div className="adm-paket-note">
-        <span>Fitur manajemen ulasan dari pelanggan nyata akan segera tersedia. Data di atas adalah preview tampilan.</span>
+      <div className="adm-paket-note" style={{ marginTop: 8 }}>
+        <span>
+          Ulasan baru masuk dalam status <strong style={{ color: '#f5a623' }}>tersembunyi</strong> secara default.
+          Klik <strong>"Tampilkan"</strong> untuk menayangkannya di website.
+        </span>
       </div>
     </>
   )
