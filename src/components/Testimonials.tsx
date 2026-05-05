@@ -71,6 +71,11 @@ export default function Testimonials() {
       setSubmitMsg({ type: 'ok', text: data.message })
       setSubmitted(true)
       setForm({ name: '', comment: '', rating: 0 })
+      // Reload reviews so the new one appears immediately
+      fetch('/api/reviews')
+        .then(r => r.json())
+        .then(d => { if (d.success) setReviews(d.data) })
+        .catch(() => {})
     } catch (err: unknown) {
       setSubmitMsg({ type: 'err', text: err instanceof Error ? err.message : 'Gagal mengirim.' })
     } finally {
