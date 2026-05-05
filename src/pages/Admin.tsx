@@ -10,15 +10,6 @@ import AdminPengaturan from '../admin/AdminPengaturan'
 
 type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'pengaturan'
 
-const navItems: { key: Page; icon: string; label: string }[] = [
-  { key: 'dashboard',   icon: '🏠', label: 'Dashboard' },
-  { key: 'pesanan',     icon: '📋', label: 'Pesanan' },
-  { key: 'pengguna',    icon: '👥', label: 'Pengguna' },
-  { key: 'paket',       icon: '📦', label: 'Paket' },
-  { key: 'ulasan',      icon: '⭐', label: 'Ulasan' },
-  { key: 'pengaturan',  icon: '⚙', label: 'Pengaturan' },
-]
-
 const pageTitle: Record<Page, string> = {
   dashboard: 'Dashboard',
   pesanan: 'Pesanan',
@@ -27,6 +18,67 @@ const pageTitle: Record<Page, string> = {
   ulasan: 'Ulasan',
   pengaturan: 'Pengaturan',
 }
+
+function IconDashboard() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <rect x="1" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+      <rect x="8.5" y="1" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+      <rect x="1" y="8.5" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+      <rect x="8.5" y="8.5" width="5.5" height="5.5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+    </svg>
+  )
+}
+function IconPesanan() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <rect x="1" y="1" width="13" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.3"/>
+      <line x1="4" y1="5" x2="11" y2="5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      <line x1="4" y1="7.5" x2="11" y2="7.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+      <line x1="4" y1="10" x2="8" y2="10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  )
+}
+function IconPengguna() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="7.5" cy="4.5" r="2.5" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M2 13c0-3.314 2.462-5 5.5-5s5.5 1.686 5.5 5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  )
+}
+function IconPaket() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M7.5 1L13 4v7L7.5 14 2 11V4L7.5 1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+      <path d="M7.5 1v13M2 4l5.5 3 5.5-3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  )
+}
+function IconUlasan() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <path d="M7.5 1.5l1.545 3.13 3.455.5-2.5 2.435.59 3.435L7.5 9.385l-3.09 1.615.59-3.435L2.5 5.13l3.455-.5L7.5 1.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+    </svg>
+  )
+}
+function IconPengaturan() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="7.5" cy="7.5" r="2" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M7.5 1v1.5M7.5 12.5V14M1 7.5h1.5M12.5 7.5H14M2.636 2.636l1.06 1.06M11.304 11.304l1.06 1.06M2.636 12.364l1.06-1.06M11.304 3.696l1.06-1.06" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
+const navItems: { key: Page; Icon: () => JSX.Element; label: string }[] = [
+  { key: 'dashboard',  Icon: IconDashboard,  label: 'Dashboard' },
+  { key: 'pesanan',    Icon: IconPesanan,    label: 'Pesanan' },
+  { key: 'pengguna',   Icon: IconPengguna,   label: 'Pengguna' },
+  { key: 'paket',      Icon: IconPaket,      label: 'Paket' },
+  { key: 'ulasan',     Icon: IconUlasan,     label: 'Ulasan' },
+  { key: 'pengaturan', Icon: IconPengaturan, label: 'Pengaturan' },
+]
 
 export default function Admin() {
   const { user, signOut } = useAuth()
@@ -54,7 +106,6 @@ export default function Admin() {
         <div className="adm-overlay" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* ── SIDEBAR ── */}
       <aside className={`adm-sidebar${sidebarOpen ? ' open' : ''}`}>
         <div className="adm-sidebar-logo">
           <span className="logo-lk">LK</span>
@@ -65,14 +116,14 @@ export default function Admin() {
         </div>
 
         <nav className="adm-nav">
-          {navItems.map(item => (
+          {navItems.map(({ key, Icon, label }) => (
             <button
-              key={item.key}
-              className={`adm-nav-item${page === item.key ? ' active' : ''}`}
-              onClick={() => goTo(item.key)}
+              key={key}
+              className={`adm-nav-item${page === key ? ' active' : ''}`}
+              onClick={() => goTo(key)}
             >
-              <span className="adm-nav-icon">{item.icon}</span>
-              {item.label}
+              <span className="adm-nav-icon"><Icon /></span>
+              {label}
             </button>
           ))}
         </nav>
@@ -90,7 +141,6 @@ export default function Admin() {
         </div>
       </aside>
 
-      {/* ── MAIN ── */}
       <div className="adm-main">
         <div className="adm-topbar">
           <button className="adm-menu-btn" onClick={() => setSidebarOpen(o => !o)}>

@@ -7,6 +7,16 @@ const dummyUlasan = [
   { id: 4, nama: 'Dimas & Rini', paket: 'Gold', rating: 5, komentar: 'Best investment for our wedding! The team captured every precious moment perfectly.', tanggal: '2025-05-01', status: 'pending' },
 ]
 
+function RatingDots({ rating }: { rating: number }) {
+  return (
+    <div className="adm-rating-dots">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <span key={i} className={`adm-rating-dot${i < rating ? ' filled' : ''}`} />
+      ))}
+    </div>
+  )
+}
+
 export default function AdminUlasan() {
   const [ulasan] = useState(dummyUlasan)
 
@@ -17,9 +27,7 @@ export default function AdminUlasan() {
     <>
       <div className="adm-page-header">
         <h2 className="adm-page-title">Ulasan</h2>
-        <div className="adm-ulasan-coming">
-          <span className="adm-coming-badge">Preview Data</span>
-        </div>
+        <span className="adm-coming-badge">Preview Data</span>
       </div>
 
       <div className="adm-stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
@@ -45,11 +53,11 @@ export default function AdminUlasan() {
                 <div className="adm-ulasan-nama">{u.nama}</div>
                 <div className="adm-ulasan-meta">
                   <span className={`pkg-${u.paket.toLowerCase()}`}>{u.paket}</span>
-                  <span className="adm-muted adm-small">• {u.tanggal}</span>
+                  <span className="adm-muted adm-small">· {u.tanggal}</span>
                 </div>
               </div>
               <div className="adm-ulasan-right">
-                <div className="adm-ulasan-stars">{'★'.repeat(u.rating)}{'☆'.repeat(5 - u.rating)}</div>
+                <RatingDots rating={u.rating} />
                 <span className={`adm-status-badge adm-status-${u.status === 'published' ? 'confirmed' : 'pending'}`}>
                   {u.status === 'published' ? 'Ditampilkan' : 'Menunggu'}
                 </span>
@@ -67,7 +75,6 @@ export default function AdminUlasan() {
       </div>
 
       <div className="adm-paket-note">
-        <span>ℹ</span>
         <span>Fitur manajemen ulasan dari pelanggan nyata akan segera tersedia. Data di atas adalah preview tampilan.</span>
       </div>
     </>

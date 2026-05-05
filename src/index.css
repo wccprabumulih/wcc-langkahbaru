@@ -633,7 +633,9 @@ footer { padding: 80px 0 40px; border-top: 1px solid var(--border); }
 .adm-ulasan-nama { font-size: 14px; font-weight: 600; color: var(--white); }
 .adm-ulasan-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .adm-ulasan-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
-.adm-ulasan-stars { color: var(--gold); font-size: 14px; letter-spacing: 2px; }
+.adm-rating-dots { display: flex; gap: 4px; align-items: center; }
+.adm-rating-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.15); }
+.adm-rating-dot.filled { background: var(--gold); border-color: var(--gold); }
 .adm-ulasan-komentar { font-size: 13px; color: var(--white-muted); line-height: 1.6; font-style: italic; }
 .adm-ulasan-actions { display: flex; gap: 8px; }
 .adm-btn-danger-sm { background: rgba(255,70,70,0.06); border: 1px solid rgba(255,70,70,0.18); color: #ff7070; border-radius: 7px; padding: 5px 14px; font-family: var(--font-body); font-size: 11px; cursor: pointer; transition: all 0.2s; }

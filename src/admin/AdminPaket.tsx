@@ -5,7 +5,6 @@ export default function AdminPaket() {
       label: 'Silver',
       price: 'Rp 1.500.000',
       color: '#a0aec0',
-      icon: '🥈',
       features: [
         'Durasi 4 jam dokumentasi',
         '1 Videografer & 1 Fotografer',
@@ -19,7 +18,6 @@ export default function AdminPaket() {
       label: 'Gold',
       price: 'Rp 2.800.000',
       color: 'var(--gold)',
-      icon: '🥇',
       badge: 'Terpopuler',
       features: [
         'Durasi 8 jam dokumentasi',
@@ -35,7 +33,6 @@ export default function AdminPaket() {
       label: 'Premium',
       price: 'Rp 4.500.000',
       color: 'var(--teal)',
-      icon: '👑',
       features: [
         'Full day dokumentasi',
         '3 Videografer & 3 Fotografer',
@@ -59,18 +56,15 @@ export default function AdminPaket() {
         {pakets.map(p => (
           <div key={p.key} className="adm-paket-card" style={{ borderColor: p.color + '40' }}>
             <div className="adm-paket-top">
-              <span className="adm-paket-icon">{p.icon}</span>
-              {p.badge && (
-                <span className="adm-paket-badge">{p.badge}</span>
-              )}
+              <div className="adm-paket-name" style={{ color: p.color }}>{p.label}</div>
+              {p.badge && <span className="adm-paket-badge">{p.badge}</span>}
             </div>
-            <div className="adm-paket-name" style={{ color: p.color }}>{p.label}</div>
             <div className="adm-paket-price">{p.price}</div>
             <div className="adm-paket-divider" />
             <ul className="adm-paket-features">
               {p.features.map(f => (
                 <li key={f}>
-                  <span className="adm-paket-check" style={{ color: p.color }}>✓</span>
+                  <span className="adm-paket-check" style={{ color: p.color }}>–</span>
                   {f}
                 </li>
               ))}
@@ -80,7 +74,6 @@ export default function AdminPaket() {
       </div>
 
       <div className="adm-paket-note">
-        <span>ℹ</span>
         <span>Untuk mengubah harga atau fitur paket, hubungi pengembang atau edit langsung di halaman publik.</span>
       </div>
     </>

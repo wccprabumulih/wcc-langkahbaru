@@ -2,6 +2,14 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Order, UserProfile, formatDate, formatDateTime, paketLabel, paketClass } from './types'
 
+const shortcuts = [
+  { key: 'pesanan',    label: 'Kelola Pesanan' },
+  { key: 'pengguna',   label: 'Kelola Pengguna' },
+  { key: 'paket',      label: 'Info Paket' },
+  { key: 'ulasan',     label: 'Ulasan' },
+  { key: 'pengaturan', label: 'Pengaturan' },
+]
+
 export default function AdminDashboard({ onNavigate }: { onNavigate: (page: string) => void }) {
   const { session } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
@@ -27,14 +35,16 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: stri
   const pending = orders.filter(o => o.status === 'pending').length
   const confirmed = orders.filter(o => o.status === 'confirmed').length
   const done = orders.filter(o => o.status === 'done').length
-  const recent = [...orders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
+  const recent = [...orders]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5)
 
   const stats = [
-    { label: 'Total Pesanan', value: total, icon: '📋', accent: 'var(--teal)' },
-    { label: 'Menunggu', value: pending, icon: '⏳', accent: '#f5a623' },
-    { label: 'Dikonfirmasi', value: confirmed, icon: '✅', accent: '#7ed321' },
-    { label: 'Selesai', value: done, icon: '🎉', accent: '#9b59b6' },
-    { label: 'Total Pengguna', value: users.length, icon: '👥', accent: 'var(--gold)' },
+    { label: 'Total Pesanan', value: total,         accent: 'var(--teal)' },
+    { label: 'Menunggu',      value: pending,        accent: '#f5a623' },
+    { label: 'Dikonfirmasi',  value: confirmed,      accent: '#7ed321' },
+    { label: 'Selesai',       value: done,           accent: '#9b59b6' },
+    { label: 'Total Pengguna',value: users.length,   accent: 'var(--gold)' },
   ]
 
   return (
@@ -47,7 +57,6 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: stri
       <div className="adm-dash-stats">
         {stats.map(s => (
           <div key={s.label} className="adm-dash-stat" style={{ borderColor: s.accent + '30' }}>
-            <div className="adm-dash-stat-icon">{s.icon}</div>
             <div className="adm-dash-stat-num" style={{ color: s.accent }}>{loading ? '—' : s.value}</div>
             <div className="adm-stat-label">{s.label}</div>
           </div>
@@ -100,9 +109,9 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: stri
           </div>
           <div className="adm-dash-donut-wrap">
             {[
-              { label: 'Pending', count: pending, color: '#f5a623' },
-              { label: 'Confirmed', count: confirmed, color: '#7ed321' },
-              { label: 'Selesai', count: done, color: '#9b59b6' },
+              { label: 'Pending',    count: pending,   color: '#f5a623' },
+              { label: 'Confirmed',  count: confirmed, color: '#7ed321' },
+              { label: 'Selesai',    count: done,      color: '#9b59b6' },
             ].map(item => (
               <div key={item.label} className="adm-dash-bar-row">
                 <span className="adm-dash-bar-label">{item.label}</span>
@@ -122,15 +131,9 @@ export default function AdminDashboard({ onNavigate }: { onNavigate: (page: stri
 
           <div className="adm-dash-shortcuts">
             <span className="adm-dash-card-title" style={{ marginBottom: 12, display: 'block' }}>Navigasi Cepat</span>
-            {[
-              { key: 'pesanan', icon: '📋', label: 'Kelola Pesanan' },
-              { key: 'pengguna', icon: '👥', label: 'Kelola Pengguna' },
-              { key: 'paket', icon: '📦', label: 'Info Paket' },
-              { key: 'ulasan', icon: '⭐', label: 'Ulasan' },
-              { key: 'pengaturan', icon: '⚙', label: 'Pengaturan' },
-            ].map(item => (
+            {shortcuts.map(item => (
               <button key={item.key} className="adm-shortcut-btn" onClick={() => onNavigate(item.key)}>
-                <span>{item.icon}</span> {item.label}
+                {item.label}
               </button>
             ))}
           </div>
