@@ -5,6 +5,76 @@ interface Message {
   content: string
 }
 
+function renderInline(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = []
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|\[(.+?)\]\((https?:\/\/[^\)]+)\))/g
+  let last = 0
+  let match
+  let key = 0
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index))
+    if (match[2]) parts.push(<strong key={key++}>{match[2]}</strong>)
+    else if (match[3]) parts.push(<em key={key++}>{match[3]}</em>)
+    else if (match[4] && match[5]) parts.push(<a key={key++} href={match[5]} target="_blank" rel="noreferrer">{match[4]}</a>)
+    last = match.index + match[0].length
+  }
+  if (last < text.length) parts.push(text.slice(last))
+  return parts
+}
+
+function renderMarkdown(content: string): React.ReactNode {
+  const lines = content.split('\n')
+  const blocks: React.ReactNode[] = []
+  let listItems: string[] = []
+  let listType: 'ul' | 'ol' | null = null
+  let key = 0
+
+  const flushList = () => {
+    if (listItems.length === 0) return
+    if (listType === 'ol') {
+      blocks.push(
+        <ol key={key++}>
+          {listItems.map((item, i) => <li key={i}>{renderInline(item)}</li>)}
+        </ol>
+      )
+    } else {
+      blocks.push(
+        <ul key={key++}>
+          {listItems.map((item, i) => <li key={i}>{renderInline(item)}</li>)}
+        </ul>
+      )
+    }
+    listItems = []
+    listType = null
+  }
+
+  for (const raw of lines) {
+    const line = raw.trimEnd()
+    const olMatch = line.match(/^\d+\.\s+(.+)/)
+    const ulMatch = line.match(/^[-•*]\s+(.+)/)
+
+    if (olMatch) {
+      if (listType === 'ul') flushList()
+      listType = 'ol'
+      listItems.push(olMatch[1])
+    } else if (ulMatch) {
+      if (listType === 'ol') flushList()
+      listType = 'ul'
+      listItems.push(ulMatch[1])
+    } else {
+      flushList()
+      if (line === '') {
+        // skip blank lines (spacing handled by gap)
+      } else {
+        blocks.push(<p key={key++}>{renderInline(line)}</p>)
+      }
+    }
+  }
+  flushList()
+
+  return <div className="chat-md">{blocks}</div>
+}
+
 const WA_NUMBER = '6281532477237'
 
 export default function ChatWidget() {
@@ -93,9 +163,7 @@ export default function ChatWidget() {
             <div key={i} className={`chat-bubble-wrap ${m.role}`}>
               {m.role === 'assistant' && <div className="chat-bubble-avatar">LK</div>}
               <div className={`chat-bubble ${m.role}`}>
-                {m.content.split('\n').map((line, j) => (
-                  <span key={j}>{line}{j < m.content.split('\n').length - 1 && <br />}</span>
-                ))}
+                {m.role === 'assistant' ? renderMarkdown(m.content) : m.content}
               </div>
             </div>
           ))}
