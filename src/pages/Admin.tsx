@@ -92,15 +92,40 @@ function IconPengaturan() {
   )
 }
 
-const navItems: { key: Page; Icon: () => JSX.Element; label: string }[] = [
-  { key: 'dashboard',  Icon: IconDashboard,  label: 'Dashboard' },
-  { key: 'pesanan',    Icon: IconPesanan,    label: 'Pesanan' },
-  { key: 'pengguna',   Icon: IconPengguna,   label: 'Pengguna' },
-  { key: 'paket',      Icon: IconPaket,      label: 'Paket' },
-  { key: 'ulasan',     Icon: IconUlasan,     label: 'Ulasan' },
-  { key: 'galeri',     Icon: IconGaleri,     label: 'Galeri' },
-  { key: 'tentang',    Icon: IconTentang,    label: 'Tentang Kami' },
-  { key: 'pengaturan', Icon: IconPengaturan, label: 'Pengaturan' },
+const navGroups: { label: string; items: { key: Page; Icon: () => JSX.Element; label: string }[] }[] = [
+  {
+    label: 'Overview',
+    items: [
+      { key: 'dashboard', Icon: IconDashboard, label: 'Dashboard' },
+    ],
+  },
+  {
+    label: 'Kelola',
+    items: [
+      { key: 'pesanan',  Icon: IconPesanan, label: 'Pesanan' },
+      { key: 'paket',    Icon: IconPaket,   label: 'Paket' },
+      { key: 'galeri',   Icon: IconGaleri,  label: 'Galeri' },
+    ],
+  },
+  {
+    label: 'Komunitas',
+    items: [
+      { key: 'pengguna', Icon: IconPengguna, label: 'Pengguna' },
+      { key: 'ulasan',   Icon: IconUlasan,   label: 'Ulasan' },
+    ],
+  },
+  {
+    label: 'Konten',
+    items: [
+      { key: 'tentang', Icon: IconTentang, label: 'Tentang Kami' },
+    ],
+  },
+  {
+    label: 'Akun',
+    items: [
+      { key: 'pengaturan', Icon: IconPengaturan, label: 'Pengaturan' },
+    ],
+  },
 ]
 
 export default function Admin() {
@@ -139,15 +164,20 @@ export default function Admin() {
         </div>
 
         <nav className="adm-nav">
-          {navItems.map(({ key, Icon, label }) => (
-            <button
-              key={key}
-              className={`adm-nav-item${page === key ? ' active' : ''}`}
-              onClick={() => goTo(key)}
-            >
-              <span className="adm-nav-icon"><Icon /></span>
-              {label}
-            </button>
+          {navGroups.map(group => (
+            <div key={group.label} className="adm-nav-group">
+              <div className="adm-nav-group-label">{group.label}</div>
+              {group.items.map(({ key, Icon, label }) => (
+                <button
+                  key={key}
+                  className={`adm-nav-item${page === key ? ' active' : ''}`}
+                  onClick={() => goTo(key)}
+                >
+                  <span className="adm-nav-icon"><Icon /></span>
+                  {label}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 
