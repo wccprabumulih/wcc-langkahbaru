@@ -10,6 +10,18 @@ interface Review {
   created_at: string
 }
 
+function usePageMeta(title: string, description: string) {
+  useEffect(() => {
+    document.title = title
+    const meta = document.querySelector('meta[name="description"]')
+    if (meta) meta.setAttribute('content', description)
+    return () => {
+      document.title = 'WCC Langkah Baru – Wedding Content Creator Prabumulih'
+      if (meta) meta.setAttribute('content', 'WCC Langkah Baru - Wedding Content Creator Prabumulih. Abadikan momen pernikahanmu dengan cinematic dan profesional.')
+    }
+  }, [])
+}
+
 function Stars({ rating, interactive, onRate }: { rating: number; interactive?: boolean; onRate?: (n: number) => void }) {
   const [hovered, setHovered] = useState(0)
   return (
@@ -37,6 +49,10 @@ function formatDate(iso: string) {
 }
 
 export default function Ulasan() {
+  usePageMeta(
+    'Ulasan Pelanggan – WCC Langkah Baru | Wedding Content Creator Prabumulih',
+    'Baca ulasan dan testimoni nyata dari pelanggan WCC Langkah Baru. Wedding Content Creator terpercaya di Prabumulih, Sumatera Selatan.'
+  )
   const navigate = useNavigate()
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)

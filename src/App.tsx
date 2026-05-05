@@ -7,6 +7,7 @@ import Admin from './pages/Admin'
 import Auth from './pages/Auth'
 import Ulasan from './pages/Ulasan'
 import Galeri from './pages/Galeri'
+import NotFound from './pages/NotFound'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
               <Admin />
             </ProtectedRoute>
           } />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

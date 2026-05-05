@@ -27,6 +27,16 @@ export default function Galeri() {
   const LIMIT = 28
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    document.title = 'Galeri Foto – WCC Langkah Baru | Wedding Content Creator Prabumulih'
+    const meta = document.querySelector('meta[name="description"]')
+    if (meta) meta.setAttribute('content', 'Lihat koleksi foto dan video sinematik hasil karya WCC Langkah Baru. Wedding Content Creator profesional di Prabumulih, Sumatera Selatan.')
+    return () => {
+      document.title = 'WCC Langkah Baru – Wedding Content Creator Prabumulih'
+      if (meta) meta.setAttribute('content', 'WCC Langkah Baru - Wedding Content Creator Prabumulih. Abadikan momen pernikahanmu dengan cinematic dan profesional.')
+    }
+  }, [])
+
   const fetchPhotos = async (p = 1, append = false) => {
     if (p === 1) setLoading(true); else setLoadingMore(true)
     try {

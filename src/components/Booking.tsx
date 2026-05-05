@@ -24,10 +24,20 @@ const contactItems = [
   { icon: '⏰', label: 'Jam Operasional', value: 'Setiap Hari, Available by Request' },
 ]
 
+const TODAY = new Date().toISOString().split('T')[0]
+
+function formatWA(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 13)
+  if (digits.length <= 4) return digits
+  if (digits.length <= 8) return `${digits.slice(0, 4)}-${digits.slice(4)}`
+  return `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8)}`
+}
+
 export default function Booking() {
   const [loading, setLoading] = useState(false)
   const [packages, setPackages] = useState<Package[]>([])
   const [toast, setToast] = useState<ToastData | null>(null)
+  const [waValue, setWaValue] = useState('')
 
   useEffect(() => {
     fetch('/api/packages')
@@ -50,7 +60,7 @@ export default function Booking() {
 
     const data = {
       nama: (form.elements.namedItem('nama') as HTMLInputElement).value.trim(),
-      whatsapp: (form.elements.namedItem('whatsapp') as HTMLInputElement).value.trim(),
+      whatsapp: waValue.replace(/-/g, '').trim(),
       tanggal: (form.elements.namedItem('tanggal') as HTMLInputElement).value,
       lokasi: (form.elements.namedItem('lokasi') as HTMLInputElement).value.trim(),
       paket: paketKey,
@@ -113,6 +123,7 @@ export default function Booking() {
     window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waMsg)}`, '_blank')
 
     form.reset()
+    setWaValue('')
     setLoading(false)
   }
 
@@ -151,13 +162,22 @@ export default function Booking() {
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="whatsapp">Nomor WhatsApp *</label>
-                <input className="form-control" type="tel" id="whatsapp" name="whatsapp" placeholder="0812xxxxxxxx" required />
+                <input
+                  className="form-control"
+                  type="tel"
+                  id="whatsapp"
+                  name="whatsapp"
+                  placeholder="0812-3456-7890"
+                  value={waValue}
+                  onChange={e => setWaValue(formatWA(e.target.value))}
+                  required
+                />
               </div>
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label" htmlFor="tanggal">Tanggal Acara *</label>
-                <input className="form-control" type="date" id="tanggal" name="tanggal" required />
+                <input className="form-control" type="date" id="tanggal" name="tanggal" min={TODAY} required />
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="paket">Pilih Paket *</label>
