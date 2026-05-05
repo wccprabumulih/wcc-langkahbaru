@@ -1,26 +1,8 @@
 import { useEffect, useRef } from 'react'
 
-interface Props {
-  disabled?: boolean
-}
-
-export default function CustomCursor({ disabled = false }: Props) {
+export default function CustomCursor() {
   const dotRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
-  // Use a ref so event listeners always read the latest value without stale closures
-  const disabledRef = useRef(disabled)
-
-  useEffect(() => {
-    disabledRef.current = disabled
-    const dot = dotRef.current
-    const ring = ringRef.current
-    if (!dot || !ring) return
-    if (disabled) {
-      dot.style.opacity = '0'
-      ring.style.opacity = '0'
-    }
-    // CSS handles cursor:none globally; admin layout restores it via CSS too
-  }, [disabled])
 
   useEffect(() => {
     const dot = dotRef.current
@@ -33,7 +15,6 @@ export default function CustomCursor({ disabled = false }: Props) {
     let animId: number
 
     const show = () => {
-      if (disabledRef.current) return
       if (!visible) {
         visible = true
         dot.style.opacity = '1'
@@ -48,7 +29,6 @@ export default function CustomCursor({ disabled = false }: Props) {
     }
 
     const onMove = (e: MouseEvent) => {
-      if (disabledRef.current) return
       mouseX = e.clientX
       mouseY = e.clientY
       dot.style.left = mouseX + 'px'
@@ -57,7 +37,7 @@ export default function CustomCursor({ disabled = false }: Props) {
     }
 
     const onLeave = () => hide()
-    const onEnter = () => { if (!disabledRef.current) show() }
+    const onEnter = () => show()
 
     const animate = () => {
       ringX += (mouseX - ringX) * 0.12

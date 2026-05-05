@@ -29,8 +29,8 @@ body {
   overflow-x: hidden;
   cursor: none;
 }
-/* Kill native cursor on ALL elements so no hover state can override it */
-*:not(.adm-layout):not(.adm-layout *) { cursor: none !important; }
+/* Kill native cursor everywhere — custom cursor handles all routes */
+* { cursor: none !important; }
 a { text-decoration: none; color: inherit; }
 img { max-width: 100%; display: block; }
 ul { list-style: none; }
