@@ -175,20 +175,16 @@ app.get('/api/orders', requireAdmin, async (req, res) => {
   }
 });
 
-// POST /api/orders (authenticated)
-app.post('/api/orders', requireAuth, async (req, res) => {
+// POST /api/orders — public, no auth required
+app.post('/api/orders', async (req, res) => {
   try {
     const { nama, whatsapp, tanggal, lokasi, paket, catatan } = req.body;
     if (!nama || !whatsapp || !tanggal || !lokasi || !paket) {
       return res.status(400).json({ success: false, message: 'Semua field wajib diisi' });
     }
-    const validPaket = ['silver', 'gold', 'premium'];
-    if (!validPaket.includes(paket.toLowerCase())) {
-      return res.status(400).json({ success: false, message: 'Paket tidak valid' });
-    }
     const result = await pool.query(
       'INSERT INTO orders (nama, whatsapp, tanggal, lokasi, paket, catatan) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [nama, whatsapp, tanggal, lokasi, paket.toLowerCase(), catatan || '']
+      [nama, whatsapp, tanggal, lokasi, paket, catatan || '']
     );
     res.json({ success: true, message: 'Pesanan berhasil disimpan!', order_id: result.rows[0].id });
   } catch (err) {

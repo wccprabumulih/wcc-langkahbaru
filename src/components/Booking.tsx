@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react'
-import Modal from './Modal'
 import Toast, { ToastData } from './Toast'
 
 const WA_NUMBER = '6281532477237'
@@ -29,9 +28,6 @@ export default function Booking() {
   const [loading, setLoading] = useState(false)
   const [packages, setPackages] = useState<Package[]>([])
   const [toast, setToast] = useState<ToastData | null>(null)
-  const [modal, setModal] = useState<{ open: boolean; title: string; desc: string; waUrl: string }>({
-    open: false, title: '', desc: '', waUrl: '',
-  })
 
   useEffect(() => {
     fetch('/api/packages')
@@ -45,13 +41,13 @@ export default function Booking() {
   }, [])
 
   const closeToast = useCallback(() => setToast(null), [])
-  const closeModal = useCallback(() => setModal(m => ({ ...m, open: false })), [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
     const paketKey = (form.elements.namedItem('paket') as HTMLSelectElement).value
     const selectedPkg = packages.find(p => p.key === paketKey)
+
     const data = {
       nama: (form.elements.namedItem('nama') as HTMLInputElement).value.trim(),
       whatsapp: (form.elements.namedItem('whatsapp') as HTMLInputElement).value.trim(),
@@ -80,15 +76,25 @@ export default function Booking() {
         body: JSON.stringify(data),
       })
       const result = await res.json()
-      if (result.success) orderId = result.order_id
+      if (result.success) {
+        orderId = result.order_id
+      } else {
+        console.warn('Order save failed:', result.message)
+      }
     } catch {
-      console.warn('Database tidak tersedia')
+      console.warn('Tidak dapat menyimpan ke database')
     }
 
-    const paketLabel = selectedPkg ? `${selectedPkg.label} (${selectedPkg.price})` : paketKey
-
+    // Build WhatsApp message
+    const paketLabel = selectedPkg ? `${selectedPkg.label} (${selectedPkg.price})` : data.paket
     const waMsg = selectedPkg?.wa_msg
-      ? selectedPkg.wa_msg + `\n\n👤 *Nama:* ${data.nama}\n📱 *WA:* ${data.whatsapp}\n📅 *Tanggal:* ${formatDate(data.tanggal)}\n📍 *Lokasi:* ${data.lokasi}` + (data.catatan ? `\n📝 *Catatan:* ${data.catatan}` : '') + (orderId ? `\n📋 *Order ID:* #${orderId}` : '')
+      ? selectedPkg.wa_msg
+        + `\n\n👤 *Nama:* ${data.nama}`
+        + `\n📱 *WA:* ${data.whatsapp}`
+        + `\n📅 *Tanggal:* ${formatDate(data.tanggal)}`
+        + `\n📍 *Lokasi:* ${data.lokasi}`
+        + (data.catatan ? `\n📝 *Catatan:* ${data.catatan}` : '')
+        + (orderId ? `\n📋 *Order ID:* #${orderId}` : '')
       : [
           '🎬 *PEMESANAN WCC LANGKAH BARU*',
           orderId ? `📋 Order ID: #${orderId}` : '',
@@ -103,20 +109,15 @@ export default function Booking() {
           '✨ Saya ingin memesan jasa Wedding Content Creator. Mohon konfirmasinya! 🙏',
         ].filter(Boolean).join('\n')
 
-    const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waMsg)}`
-
-    setModal({
-      open: true,
-      title: 'Pesanan Berhasil!',
-      desc: `Terima kasih ${data.nama}! Pesanan kamu telah dicatat${orderId ? ` (ID: #${orderId})` : ''}. Klik tombol di bawah untuk langsung chat ke WhatsApp kami.`,
-      waUrl,
-    })
+    // Langsung buka WhatsApp
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waMsg)}`, '_blank')
 
     form.reset()
     setLoading(false)
   }
 
-  const openWa = (msg: string) => window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank')
+  const openWa = (msg: string) =>
+    window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank')
 
   return (
     <section className="booking" id="booking">
@@ -182,7 +183,7 @@ export default function Booking() {
               {loading ? '⏳ Menyimpan...' : '📲 Kirim Pemesanan via WhatsApp'}
             </button>
             <p className="form-note">
-              Pesanan akan tersimpan di database &amp; diteruskan via WhatsApp secara otomatis.<br />
+              Pesanan akan tersimpan di database &amp; kamu langsung diarahkan ke WhatsApp kami.<br />
               Ada pertanyaan? <a href="#" onClick={e => { e.preventDefault(); openWa('Halo kak, saya mau tanya tentang WCC Langkah Baru 😊') }}>Chat langsung disini →</a>
             </p>
           </form>
@@ -190,14 +191,6 @@ export default function Booking() {
       </div>
 
       <Toast toast={toast} onClose={closeToast} />
-      <Modal
-        open={modal.open}
-        icon="🎉"
-        title={modal.title}
-        desc={modal.desc}
-        waUrl={modal.waUrl}
-        onClose={closeModal}
-      />
     </section>
   )
 }
