@@ -7,19 +7,19 @@ interface Props {
 export default function CustomCursor({ disabled = false }: Props) {
   const dotRef = useRef<HTMLDivElement>(null)
   const ringRef = useRef<HTMLDivElement>(null)
+  // Use a ref so event listeners always read the latest value without stale closures
+  const disabledRef = useRef(disabled)
 
-  // Toggle visibility and native cursor when disabled changes
   useEffect(() => {
+    disabledRef.current = disabled
     const dot = dotRef.current
     const ring = ringRef.current
     if (!dot || !ring) return
     if (disabled) {
       dot.style.opacity = '0'
       ring.style.opacity = '0'
-      document.body.style.cursor = ''
-    } else {
-      document.body.style.cursor = 'none'
     }
+    // CSS handles cursor:none globally; admin layout restores it via CSS too
   }, [disabled])
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function CustomCursor({ disabled = false }: Props) {
     let animId: number
 
     const show = () => {
-      if (disabled) return
+      if (disabledRef.current) return
       if (!visible) {
         visible = true
         dot.style.opacity = '1'
@@ -48,7 +48,7 @@ export default function CustomCursor({ disabled = false }: Props) {
     }
 
     const onMove = (e: MouseEvent) => {
-      if (disabled) return
+      if (disabledRef.current) return
       mouseX = e.clientX
       mouseY = e.clientY
       dot.style.left = mouseX + 'px'
@@ -57,7 +57,7 @@ export default function CustomCursor({ disabled = false }: Props) {
     }
 
     const onLeave = () => hide()
-    const onEnter = () => { if (!disabled) show() }
+    const onEnter = () => { if (!disabledRef.current) show() }
 
     const animate = () => {
       ringX += (mouseX - ringX) * 0.12
@@ -73,15 +73,13 @@ export default function CustomCursor({ disabled = false }: Props) {
     document.documentElement.addEventListener('mouseenter', onEnter)
 
     const addHoverListeners = () => {
-      const hoverEls = document.querySelectorAll('a, button, .service-card, .gallery-item, .testi-card, input, select, textarea, label[for]')
-      hoverEls.forEach(el => {
+      document.querySelectorAll('a, button, .service-card, .gallery-item, .testi-card, input, select, textarea, label[for]').forEach(el => {
         el.addEventListener('mouseenter', () => ring.classList.add('hovered'))
         el.addEventListener('mouseleave', () => ring.classList.remove('hovered'))
       })
     }
 
     addHoverListeners()
-
     const observer = new MutationObserver(addHoverListeners)
     observer.observe(document.body, { childList: true, subtree: true })
 
@@ -91,7 +89,6 @@ export default function CustomCursor({ disabled = false }: Props) {
       document.documentElement.removeEventListener('mouseenter', onEnter)
       cancelAnimationFrame(animId)
       observer.disconnect()
-      document.body.style.cursor = ''
     }
   }, [])
 
