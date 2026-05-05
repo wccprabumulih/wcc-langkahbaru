@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import CustomCursor from '../components/CustomCursor'
 import Navbar from '../components/Navbar'
 import Hero from '../components/Hero'
 import Stats from '../components/Stats'
