@@ -915,7 +915,7 @@ select.adm-input { appearance: none; }
   .btn-nav-cta { padding: 8px 16px; font-size: 12px; }
   .hamburger { display: flex; }
   .services-grid { grid-template-columns: 1fr; }
-  .testi-grid { grid-template-columns: 1fr; }
+  .testi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .stats .container { grid-template-columns: repeat(2, 1fr); }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }
@@ -976,4 +976,4 @@ select.adm-input { appearance: none; }
 .ulasan-page-body { padding: 60px 0 120px; }
 .ulasan-page-grid { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 900px) { .ulasan-page-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .ulasan-page-grid { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .ulasan-page-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
