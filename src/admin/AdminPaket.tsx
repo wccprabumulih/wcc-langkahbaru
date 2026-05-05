@@ -49,7 +49,7 @@ export default function AdminPaket() {
   const load = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/packages', { headers })
+      const res = await fetch('/api/admin/packages', { headers })
       const data = await res.json()
       if (data.success) setPackages(data.data)
     } finally {

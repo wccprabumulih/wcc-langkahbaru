@@ -192,6 +192,80 @@ app.post('/api/orders/:id/status', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Packages ────────────────────────────────────────────────────────────────
+
+// GET /api/packages — public, returns active packages
+app.get('/api/packages', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM packages WHERE active = true ORDER BY sort_order ASC'
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/admin/packages — admin, returns all packages
+app.get('/api/admin/packages', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM packages ORDER BY sort_order ASC');
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/admin/packages — create package (admin only)
+app.post('/api/admin/packages', requireAdmin, async (req, res) => {
+  try {
+    const { key, label, price, price_note, badge, popular, features, wa_msg, cta_class, sort_order, active } = req.body;
+    if (!key || !label || !price) {
+      return res.status(400).json({ success: false, message: 'key, label, dan price wajib diisi' });
+    }
+    const result = await pool.query(
+      `INSERT INTO packages (key, label, price, price_note, badge, popular, features, wa_msg, cta_class, sort_order, active)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`,
+      [key, label, price, price_note || 'per hari acara', badge || '', popular ?? false,
+       JSON.stringify(features || []), wa_msg || '', cta_class || 'btn-primary', sort_order ?? 0, active ?? true]
+    );
+    res.json({ success: true, message: 'Paket berhasil ditambahkan', id: result.rows[0].id });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(400).json({ success: false, message: 'Key paket sudah digunakan' });
+    }
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/admin/packages/:id — update package (admin only)
+app.put('/api/admin/packages/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { label, price, price_note, badge, popular, features, wa_msg, cta_class, sort_order, active } = req.body;
+    await pool.query(
+      `UPDATE packages SET label=$1, price=$2, price_note=$3, badge=$4, popular=$5,
+       features=$6, wa_msg=$7, cta_class=$8, sort_order=$9, active=$10 WHERE id=$11`,
+      [label, price, price_note || 'per hari acara', badge || '', popular ?? false,
+       JSON.stringify(features || []), wa_msg || '', cta_class || 'btn-primary', sort_order ?? 0, active ?? true, id]
+    );
+    res.json({ success: true, message: 'Paket berhasil diperbarui' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/admin/packages/:id — delete package (admin only)
+app.delete('/api/admin/packages/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM packages WHERE id = $1', [id]);
+    res.json({ success: true, message: 'Paket berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── Serve built React app ───────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -1,150 +1,122 @@
-# WCC Langkah Baru – Wedding Content Creator
+# WCC Langkah Baru
 
-Marketing site untuk layanan Wedding Content Creator di Prabumulih, Sumatera Selatan.
+A marketing and booking platform for a Wedding Content Creator (WCC) service based in Prabumulih, Indonesia.
 
-## Stack
+## Overview
 
-- **Frontend**: React 18 + Vite + TypeScript (port 5000)
-- **Backend**: Express.js (port 3001, proxied via Vite)
-- **Database**: Replit PostgreSQL (`orders` table), Supabase (auth + `profiles` RBAC)
-- **Auth**: Supabase Auth (email/password)
-- **Styling**: Global CSS (design tokens, no Tailwind)
-- **Routing**: react-router-dom v6
+This app provides:
+- **Public landing page**: Hero section, About, Service packages, Gallery, Booking form, Testimonials, Footer
+- **Authentication**: Login / Register via Supabase Auth (email + password)
+- **Admin dashboard**: Manage orders, users, packages, and reviews
 
-## Struktur Project
+## Tech Stack
+
+- **Frontend**: React 18 + TypeScript + Vite (port 5000)
+- **Backend**: Express.js API (port 3001, proxied via `/api`)
+- **Auth**: Supabase Auth with RBAC (admin / user roles via `profiles` table in Supabase)
+- **Database**: Replit PostgreSQL (`orders`, `packages` tables)
+- **Styling**: Custom CSS with Gold/Teal premium theme
+
+## Project Structure
 
 ```
 /
 ├── api/
-│   └── server.js              # Express API (port 3001)
+│   └── server.js          # Express API server
 ├── src/
-│   ├── components/
-│   │   ├── Navbar.tsx         # Auth-aware navbar, profile dropdown
-│   │   ├── ProtectedRoute.tsx # Role-based route guard
-│   │   ├── CustomCursor.tsx
-│   │   ├── Hero.tsx
-│   │   ├── Stats.tsx
-│   │   ├── About.tsx
-│   │   ├── Services.tsx
-│   │   ├── Process.tsx
-│   │   ├── Gallery.tsx
-│   │   ├── Testimonials.tsx
-│   │   ├── Booking.tsx
-│   │   ├── Footer.tsx
-│   │   ├── Modal.tsx
-│   │   └── Toast.tsx
+│   ├── admin/             # Admin panel sub-pages
+│   │   ├── AdminDashboard.tsx
+│   │   ├── AdminPaket.tsx
+│   │   ├── AdminPengguna.tsx
+│   │   ├── AdminPesanan.tsx
+│   │   ├── AdminPengaturan.tsx
+│   │   ├── AdminUlasan.tsx
+│   │   └── types.ts
+│   ├── components/        # Reusable UI components
 │   ├── contexts/
-│   │   └── AuthContext.tsx    # user, session, role, loading, signOut
+│   │   └── AuthContext.tsx  # Supabase session + role management
 │   ├── lib/
-│   │   └── supabase.ts        # Supabase client
+│   │   └── supabase.ts    # Supabase client
 │   ├── pages/
-│   │   ├── Home.tsx           # Landing page (semua sections)
-│   │   ├── Auth.tsx           # Login/Register (/auth)
-│   │   └── Admin.tsx          # Admin dashboard (/admin, admin-only)
-│   ├── App.tsx                # BrowserRouter + Routes
-│   ├── main.tsx               # React entry point
-│   └── index.css              # Global CSS + design tokens
-├── supabase-setup.sql         # SQL untuk dijalankan di Supabase SQL Editor
-├── index.html
-├── vite.config.ts
-├── tsconfig.json
-└── package.json
+│   │   ├── Home.tsx
+│   │   ├── Auth.tsx       # Login + Register
+│   │   └── Admin.tsx      # Admin layout + routing
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+├── package.json
+└── vite.config.ts         # Vite + API proxy config
 ```
 
-## Routes
+## Database Schema (Replit PostgreSQL)
 
-- `/` → Home (landing page)
-- `/auth` → Login / Register
-- `/admin` → Admin dashboard (protected — role: admin only)
+### `orders`
+| Column | Type | Notes |
+|---|---|---|
+| id | SERIAL PK | Auto-increment |
+| nama | TEXT | Customer name |
+| whatsapp | TEXT | Customer WA number |
+| tanggal | DATE | Event date |
+| lokasi | TEXT | Event location |
+| paket | TEXT | silver / gold / premium |
+| catatan | TEXT | Optional notes |
+| status | TEXT | pending / confirmed / done |
+| created_at | TIMESTAMPTZ | Auto |
 
-## RBAC System
-
-- Default role untuk semua user baru = `user`
-- Role `admin` → redirect ke `/admin` setelah login
-- Role `user` → redirect ke `/` setelah login
-- `/admin` route dilindungi `ProtectedRoute` (redirect ke `/` jika bukan admin)
-- Semua API `/api/orders` dan `/api/admin/*` dilindungi JWT verification
+### `packages`
+| Column | Type | Notes |
+|---|---|---|
+| id | SERIAL PK | Auto-increment |
+| key | TEXT UNIQUE | e.g. silver, gold, premium |
+| label | TEXT | Display name |
+| price | TEXT | e.g. 300K |
+| price_note | TEXT | e.g. per hari acara |
+| badge | TEXT | Badge label |
+| popular | BOOLEAN | Show "Terpopuler" badge |
+| features | JSONB | Array of feature strings |
+| wa_msg | TEXT | Pre-filled WhatsApp message |
+| cta_class | TEXT | btn-primary or btn-outline |
+| sort_order | INT | Display order |
+| active | BOOLEAN | Show on public site |
 
 ## API Endpoints
 
-### Auth
-- `POST /api/auth/create-profile` — Buat profil user (role: user) setelah sign-up
-- `GET  /api/auth/me` — Ambil profil + role user yang sedang login (requires auth)
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | /api/auth/create-profile | None | Create user profile after sign-up |
+| GET | /api/auth/me | User | Get own profile + role |
+| GET | /api/orders | Admin | List all orders (with optional ?status filter) |
+| POST | /api/orders | User | Submit new booking |
+| POST | /api/orders/:id/status | Admin | Update order status |
+| GET | /api/packages | None | List active packages (public) |
+| GET | /api/admin/packages | Admin | List all packages |
+| POST | /api/admin/packages | Admin | Create package |
+| PUT | /api/admin/packages/:id | Admin | Update package |
+| DELETE | /api/admin/packages/:id | Admin | Delete package |
+| GET | /api/admin/users | Admin | List all users with roles |
+| POST | /api/admin/users/:id/role | Admin | Update user role |
 
-### Admin
-- `GET  /api/admin/users` — List semua user dengan role (admin only)
-- `POST /api/admin/users/:id/role` — Update role user (admin only)
+## Environment Variables / Secrets
 
-### Orders
-- `GET  /api/orders` — Ambil semua orders (admin only)
-- `POST /api/orders` — Buat order baru (requires auth)
-- `POST /api/orders/:id/status` — Update status order (admin only)
+All secrets are stored in Replit Secrets:
+- `VITE_SUPABASE_URL` — Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` — Supabase anon/public key
+- `SUPABASE_SERVICE_KEY` — Supabase service role key (server-only)
+- `DATABASE_URL` — Replit PostgreSQL connection string (auto-managed)
 
-## Database
-
-### Replit PostgreSQL — `orders` table
-```sql
-CREATE TABLE orders (
-  id SERIAL PRIMARY KEY,
-  nama VARCHAR(255) NOT NULL,
-  whatsapp VARCHAR(50) NOT NULL,
-  tanggal DATE NOT NULL,
-  lokasi TEXT NOT NULL,
-  paket VARCHAR(50) NOT NULL,
-  catatan TEXT DEFAULT '',
-  status VARCHAR(50) DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-### Supabase — `profiles` table (lihat supabase-setup.sql)
-```sql
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name TEXT DEFAULT '',
-  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-```
-Trigger `on_auth_user_created` otomatis membuat profil dengan `role='user'` saat user baru daftar.
-
-## Cara Set Admin
-
-1. Login ke Supabase Dashboard → SQL Editor
-2. Jalankan `supabase-setup.sql`
-3. Update role akun yang ingin dijadikan admin:
-```sql
-UPDATE public.profiles
-  SET role = 'admin'
-WHERE id = (SELECT id FROM auth.users WHERE email = 'email@kamu.com');
-```
-
-## Design Tokens
-
-```css
---bg-deep: #050709          /* Background utama */
---teal: #00d4b8             /* Warna aksen teal */
---gold: #c9a84c             /* Warna gold */
---white: #f0ece4            /* Text utama */
---font-serif: Playfair Display
---font-body: Outfit
---font-italic: Cormorant Garamond
-```
-
-## Environment Variables
-
-- `VITE_SUPABASE_URL` — URL project Supabase
-- `VITE_SUPABASE_ANON_KEY` — Anon key Supabase (frontend)
-- `SUPABASE_SERVICE_KEY` — Service role key (backend only, JANGAN expose ke frontend)
-- `SUPABASE_DB_URL` — Supabase DB URL
-- `DATABASE_URL` — Replit PostgreSQL (orders table)
-
-## Cara Jalankan
+## Running the App
 
 ```bash
-npm run dev   # Jalankan Vite + Express sekaligus (via concurrently)
+npm run dev
 ```
 
-## WhatsApp
+Runs both Vite (port 5000) and Express API (port 3001) concurrently via `concurrently`.
 
-Semua integrasi WA menggunakan nomor: `6281532477237`
+## Supabase Setup
+
+The `profiles` table in Supabase stores user roles:
+- `id` (references auth.users)
+- `full_name` TEXT
+- `role` TEXT — `admin` or `user`
+
+See `supabase-setup.sql` for the full schema and trigger setup.
