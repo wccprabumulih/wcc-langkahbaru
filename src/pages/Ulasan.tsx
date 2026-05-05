@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Navbar from '../components/Navbar'
 
 interface Review {
   id: number
@@ -8,23 +10,17 @@ interface Review {
   created_at: string
 }
 
-const FALLBACK = [
-  { id: -1, name: 'Desy & Rio', rating: 5, comment: 'Hasilnya diluar ekspektasi! Reels wedding kita langsung viral, banyak banget yang minta kontak WCC Langkah Baru. Sangat recommended!', created_at: '' },
-  { id: -2, name: 'Ulfa & Bayu', rating: 5, comment: 'Pelayanan ramah, hasil editing cepat dan estetik banget. Story Instagram kita dapet banyak DM yang nanya siapa content creatornya!', created_at: '' },
-  { id: -3, name: 'Krisna & Puput', rating: 5, comment: 'Harga terjangkau tapi kualitasnya premium! Video cinematic yang dibuat benar-benar membuat kita terharu waktu menontonnya. Terima kasih WCC!', created_at: '' },
-]
-
 function Stars({ rating, interactive, onRate }: { rating: number; interactive?: boolean; onRate?: (n: number) => void }) {
   const [hovered, setHovered] = useState(0)
   return (
-    <span className={interactive ? 'testi-star-input' : 'testi-stars-display'}>
+    <span>
       {[1, 2, 3, 4, 5].map(n => (
         <span
           key={n}
           style={{
             cursor: interactive ? 'pointer' : 'default',
             color: n <= (interactive ? (hovered || rating) : rating) ? '#f5a623' : 'rgba(255,255,255,0.15)',
-            fontSize: interactive ? 28 : 14,
+            fontSize: interactive ? 28 : 15,
             transition: 'color 0.15s',
           }}
           onMouseEnter={() => interactive && setHovered(n)}
@@ -36,24 +32,33 @@ function Stars({ rating, interactive, onRate }: { rating: number; interactive?: 
   )
 }
 
-export default function Testimonials() {
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+export default function Ulasan() {
+  const navigate = useNavigate()
   const [reviews, setReviews] = useState<Review[]>([])
-  const [loadingReviews, setLoadingReviews] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   const [form, setForm] = useState({ name: '', comment: '', rating: 0 })
   const [submitting, setSubmitting] = useState(false)
   const [submitMsg, setSubmitMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
-  useEffect(() => {
+  const loadReviews = () => {
+    setLoading(true)
     fetch('/api/reviews')
       .then(r => r.json())
       .then(d => { if (d.success) setReviews(d.data) })
       .catch(() => {})
-      .finally(() => setLoadingReviews(false))
-  }, [])
+      .finally(() => setLoading(false))
+  }
 
-  const displayReviews = (reviews.length > 0 ? reviews : FALLBACK).slice(0, 6)
+  useEffect(() => {
+    loadReviews()
+    window.scrollTo(0, 0)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -71,6 +76,7 @@ export default function Testimonials() {
       setSubmitMsg({ type: 'ok', text: data.message })
       setSubmitted(true)
       setForm({ name: '', comment: '', rating: 0 })
+      loadReviews()
     } catch (err: unknown) {
       setSubmitMsg({ type: 'err', text: err instanceof Error ? err.message : 'Gagal mengirim.' })
     } finally {
@@ -78,32 +84,55 @@ export default function Testimonials() {
     }
   }
 
-  return (
-    <section className="testimonials" id="testimonials">
-      <div className="container">
-        <div className="testimonials-header">
-          <div className="section-tag">Ulasan Klien</div>
-          <h2 className="section-title">Kata Mereka <span>Tentang Kami</span></h2>
-        </div>
+  const avg = reviews.length
+    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
+    : null
 
-        {/* Review cards */}
-        {loadingReviews ? null : (
-          <div className="testi-grid">
-            {displayReviews.map((r, i) => (
-              <div key={r.id} className="testi-card reveal" style={{ transitionDelay: `${i * 0.12}s` }}>
-                <div className="testi-stars-display" style={{ marginBottom: 12 }}>
-                  {'★'.repeat(r.rating)}<span style={{ color: 'rgba(255,255,255,0.12)' }}>{'★'.repeat(5 - r.rating)}</span>
+  return (
+    <div className="ulasan-page">
+      <Navbar />
+
+      <div className="ulasan-page-hero">
+        <div className="container">
+          <button className="ulasan-back" onClick={() => navigate('/')}>
+            ← Kembali
+          </button>
+          <div className="section-tag" style={{ justifyContent: 'flex-start' }}>Ulasan Klien</div>
+          <h1 className="ulasan-page-title">Kata Mereka <span>Tentang Kami</span></h1>
+          {avg && (
+            <div className="ulasan-page-summary">
+              <span className="ulasan-avg-score">{avg}</span>
+              <div>
+                <Stars rating={Math.round(Number(avg))} />
+                <div className="ulasan-avg-count">{reviews.length} ulasan</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="container ulasan-page-body">
+
+        {/* Reviews grid */}
+        {loading ? (
+          <div className="adm-empty" style={{ color: 'var(--white-muted)', padding: '60px 0' }}>Memuat ulasan...</div>
+        ) : reviews.length === 0 ? (
+          <div className="adm-empty" style={{ padding: '60px 0' }}>Belum ada ulasan. Jadilah yang pertama!</div>
+        ) : (
+          <div className="testi-grid ulasan-page-grid">
+            {reviews.map((r, i) => (
+              <div key={r.id} className="testi-card" style={{ animationDelay: `${i * 0.06}s` }}>
+                <div style={{ marginBottom: 12 }}>
+                  <Stars rating={r.rating} />
                 </div>
                 <p className="testi-quote">"{r.comment}"</p>
                 <div className="testi-author">
-                  <div className="testi-avatar">{r.name.charAt(0).toUpperCase()}</div>
+                  <div className="testi-avatar" style={{ fontSize: '1rem', fontWeight: 700 }}>
+                    {r.name.charAt(0).toUpperCase()}
+                  </div>
                   <div>
                     <div className="testi-name">{r.name}</div>
-                    {r.created_at && (
-                      <div className="testi-meta">
-                        {new Date(r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </div>
-                    )}
+                    <div className="testi-meta">{formatDate(r.created_at)}</div>
                   </div>
                 </div>
               </div>
@@ -111,24 +140,15 @@ export default function Testimonials() {
           </div>
         )}
 
-        {/* See all link */}
-        {reviews.length > 6 && (
-          <div style={{ textAlign: 'center', marginTop: 36 }}>
-            <a href="/ulasan" className="btn-outline" style={{ display: 'inline-block', padding: '12px 32px', borderRadius: 50 }}>
-              Lihat Semua {reviews.length} Ulasan →
-            </a>
-          </div>
-        )}
-
-        {/* Submit review form */}
-        <div className="testi-form-wrap">
+        {/* Submit form */}
+        <div className="testi-form-wrap" style={{ marginTop: 80 }}>
           <div className="testi-form-label">Bagikan Pengalamanmu</div>
           {submitted ? (
             <div className="testi-form-thanks">
               <span style={{ fontSize: 28 }}>🙏</span>
               <div>
                 <strong>Terima kasih atas ulasanmu!</strong>
-                <p>Ulasanmu sudah langsung tampil di halaman ulasan kami.</p>
+                <p>Ulasanmu sudah langsung tampil di halaman ini.</p>
               </div>
             </div>
           ) : (
@@ -171,7 +191,8 @@ export default function Testimonials() {
             </form>
           )}
         </div>
+
       </div>
-    </section>
+    </div>
   )
 }

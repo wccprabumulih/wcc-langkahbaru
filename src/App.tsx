@@ -5,6 +5,7 @@ import CustomCursor from './components/CustomCursor'
 import Home from './pages/Home'
 import Admin from './pages/Admin'
 import Auth from './pages/Auth'
+import Ulasan from './pages/Ulasan'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/ulasan" element={<Ulasan />} />
           <Route path="/admin" element={
             <ProtectedRoute requiredRole="admin">
               <Admin />

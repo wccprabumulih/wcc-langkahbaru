@@ -932,3 +932,48 @@ select.adm-input { appearance: none; }
   .process-steps { grid-template-columns: 1fr; }
   .stats-row { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ── Ulasan page ─────────────────────────────────────────────────────────── */
+.ulasan-page { min-height: 100vh; background: var(--bg); }
+.ulasan-page-hero {
+  padding: 140px 0 60px;
+  border-bottom: 1px solid var(--border);
+}
+.ulasan-back {
+  background: none;
+  border: none;
+  color: var(--white-muted);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 24px;
+  display: block;
+  transition: color 0.2s;
+}
+.ulasan-back:hover { color: var(--white); }
+.ulasan-page-title {
+  font-family: var(--font-serif);
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 800;
+  color: var(--white);
+  margin: 12px 0 24px;
+  line-height: 1.2;
+}
+.ulasan-page-title span { color: var(--teal); }
+.ulasan-page-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.ulasan-avg-score {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1;
+}
+.ulasan-avg-count { font-size: 12px; color: var(--white-muted); margin-top: 4px; }
+.ulasan-page-body { padding: 60px 0 120px; }
+.ulasan-page-grid { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 900px) { .ulasan-page-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .ulasan-page-grid { grid-template-columns: 1fr; } }
