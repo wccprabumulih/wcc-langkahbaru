@@ -569,6 +569,109 @@ app.delete('/api/admin/images/:slot', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── CHATBOT ─────────────────────────────────────────────────────────────────
+
+// POST /api/chat — public, call Pio.codes AI with knowledge base as context
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!messages || !Array.isArray(messages)) return res.status(400).json({ success: false, message: 'Invalid messages' });
+
+    // Fetch active knowledge base
+    const kb = await pool.query(
+      'SELECT category, question, answer FROM chatbot_knowledge WHERE active = TRUE ORDER BY order_index ASC, created_at ASC'
+    );
+
+    const knowledgeText = kb.rows.length > 0
+      ? kb.rows.map(r => `[${r.category || 'Umum'}]\nTopik: ${r.question}\nJawaban: ${r.answer}`).join('\n\n')
+      : 'Tidak ada knowledge base tersedia.';
+
+    const systemPrompt = `Kamu adalah asisten virtual WCC Langkah Baru, layanan Wedding Content Creator profesional di Prabumulih, Sumatera Selatan.
+
+Tugas kamu: jawab pertanyaan pengunjung website dengan ramah, singkat, dan informatif dalam Bahasa Indonesia. Gunakan bahasa santai tapi tetap profesional.
+
+Informasi yang kamu miliki:
+${knowledgeText}
+
+Aturan penting:
+- Jawab hanya berdasarkan informasi di atas jika pertanyaan terkait layanan
+- Jika tidak tahu atau di luar topik, arahkan ke WhatsApp: 6281532477237
+- Jangan buat-buat informasi harga atau detail yang tidak ada di knowledge base
+- Tetap singkat, maksimal 3-4 kalimat per jawaban
+- Gunakan emoji secukupnya agar terasa ramah`;
+
+    const response = await fetch('https://pio.codes/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.PIO_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'qwen-plus',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages.slice(-8), // keep last 8 messages for context
+        ],
+        max_tokens: 500,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`AI API error: ${err}`);
+    }
+
+    const data = await response.json();
+    const reply = data.choices?.[0]?.message?.content || 'Maaf, saya tidak bisa menjawab saat ini.';
+    res.json({ success: true, reply });
+  } catch (err) {
+    console.error('Chat error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/admin/chatbot — list all knowledge entries
+app.get('/api/admin/chatbot', requireAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM chatbot_knowledge ORDER BY order_index ASC, created_at ASC');
+    res.json({ success: true, data: result.rows });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// POST /api/admin/chatbot — create
+app.post('/api/admin/chatbot', requireAdmin, async (req, res) => {
+  try {
+    const { category, question, answer, active, order_index } = req.body;
+    const result = await pool.query(
+      'INSERT INTO chatbot_knowledge (category, question, answer, active, order_index) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+      [category || null, question, answer, active !== false, order_index || 0]
+    );
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// PUT /api/admin/chatbot/:id — update
+app.put('/api/admin/chatbot/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { category, question, answer, active, order_index } = req.body;
+    const result = await pool.query(
+      'UPDATE chatbot_knowledge SET category=$1, question=$2, answer=$3, active=$4, order_index=$5 WHERE id=$6 RETURNING *',
+      [category || null, question, answer, active !== false, order_index || 0, id]
+    );
+    if (!result.rows.length) return res.status(404).json({ success: false, message: 'Tidak ditemukan' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
+// DELETE /api/admin/chatbot/:id
+app.delete('/api/admin/chatbot/:id', requireAdmin, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM chatbot_knowledge WHERE id=$1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ success: false, message: err.message }); }
+});
+
 // ─── PARTNERS ────────────────────────────────────────────────────────────────
 
 // GET /api/partners — public, active only

@@ -11,6 +11,7 @@ import Testimonials from '../components/Testimonials'
 import Partners from '../components/Partners'
 import Booking from '../components/Booking'
 import Footer from '../components/Footer'
+import ChatWidget from '../components/ChatWidget'
 
 export default function Home() {
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function Home() {
         <Booking />
       </main>
       <Footer />
+      <ChatWidget />
     </>
   )
 }

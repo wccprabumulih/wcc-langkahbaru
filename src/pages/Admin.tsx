@@ -9,9 +9,10 @@ import AdminUlasan from '../admin/AdminUlasan'
 import AdminGaleri from '../admin/AdminGaleri'
 import AdminTentangKami from '../admin/AdminTentangKami'
 import AdminPartner from '../admin/AdminPartner'
+import AdminChatbot from '../admin/AdminChatbot'
 import AdminPengaturan from '../admin/AdminPengaturan'
 
-type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'galeri' | 'tentang' | 'partner' | 'pengaturan'
+type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'galeri' | 'tentang' | 'partner' | 'chatbot' | 'pengaturan'
 
 const pageTitle: Record<Page, string> = {
   dashboard: 'Dashboard',
@@ -22,6 +23,7 @@ const pageTitle: Record<Page, string> = {
   galeri: 'Galeri',
   tentang: 'Tentang Kami',
   partner: 'Partner & Mitra',
+  chatbot: 'Chatbot',
   pengaturan: 'Pengaturan',
 }
 
@@ -104,6 +106,18 @@ function IconPengaturan() {
   )
 }
 
+function IconChatbot() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <rect x="1" y="2" width="13" height="9" rx="2" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M5 14l2.5-3L10 14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="5" cy="6.5" r="1" fill="currentColor"/>
+      <circle cx="7.5" cy="6.5" r="1" fill="currentColor"/>
+      <circle cx="10" cy="6.5" r="1" fill="currentColor"/>
+    </svg>
+  )
+}
+
 const navGroups: { label: string; items: { key: Page; Icon: () => JSX.Element; label: string }[] }[] = [
   {
     label: 'Overview',
@@ -131,6 +145,7 @@ const navGroups: { label: string; items: { key: Page; Icon: () => JSX.Element; l
     items: [
       { key: 'tentang',  Icon: IconTentang,  label: 'Tentang Kami' },
       { key: 'partner',  Icon: IconPartner,  label: 'Partner & Mitra' },
+      { key: 'chatbot',  Icon: IconChatbot,  label: 'Chatbot' },
     ],
   },
   {
@@ -224,6 +239,7 @@ export default function Admin() {
           {page === 'galeri'     && <AdminGaleri />}
           {page === 'tentang'    && <AdminTentangKami />}
           {page === 'partner'    && <AdminPartner />}
+          {page === 'chatbot'    && <AdminChatbot />}
           {page === 'pengaturan' && <AdminPengaturan />}
         </div>
       </div>
