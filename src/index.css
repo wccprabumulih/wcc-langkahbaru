@@ -428,11 +428,23 @@ body::before {
 .gallery-item:hover .gallery-overlay { opacity: 1; }
 
 /* TESTIMONIALS */
-.testimonials { padding: 120px 0; }
+.testimonials { padding: 120px 0; overflow: hidden; }
 .testimonials-header { text-align: center; margin-bottom: 72px; }
 .testimonials-header .section-tag { justify-content: center; }
 .testimonials-header .section-tag::before { display: none; }
 .testimonials-header .section-tag::after { content: ""; display: block; width: 32px; height: 1px; background: var(--teal); }
+
+/* Scrolling carousel track */
+.testi-track-wrap { overflow: hidden; position: relative; }
+.testi-track-wrap::before, .testi-track-wrap::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 2; width: 100px; pointer-events: none; }
+.testi-track-wrap::before { left: 0; background: linear-gradient(90deg, var(--bg-deep), transparent); }
+.testi-track-wrap::after { right: 0; background: linear-gradient(-90deg, var(--bg-deep), transparent); }
+.testi-track { display: flex; gap: 24px; animation: scroll-x 40s linear infinite; width: max-content; padding: 8px 0 12px; }
+.testi-track:hover { animation-play-state: paused; }
+.testi-card-scroll { width: 340px; flex-shrink: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; transition: border-color 0.4s, transform 0.4s var(--transition); }
+.testi-card-scroll:hover { border-color: var(--border-teal); transform: translateY(-4px); }
+
+/* Grid layout used on the full Ulasan page */
 .testi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .testi-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; transition: border-color 0.4s, transform 0.4s var(--transition); }
 .testi-card:hover { border-color: var(--border-teal); transform: translateY(-4px); }

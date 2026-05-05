@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const WA_NUMBER = '6281532477237'
 
@@ -46,6 +46,7 @@ function getThemeClass(pkg: Package, index: number): string {
 export default function Services() {
   const [packages, setPackages] = useState<Package[]>([])
   const [loading, setLoading] = useState(true)
+  const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     fetch('/api/packages')
@@ -53,6 +54,23 @@ export default function Services() {
       .then(data => { if (data.success) setPackages(data.data) })
       .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    if (loading || !sectionRef.current) return
+    const els = sectionRef.current.querySelectorAll<HTMLElement>('.reveal, .reveal-left, .reveal-right')
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target as HTMLElement
+          const delay = parseFloat(el.style.transitionDelay || '0') * 1000
+          setTimeout(() => el.classList.add('visible'), delay)
+          observer.unobserve(el)
+        }
+      })
+    }, { threshold: 0.12 })
+    els.forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [loading, packages])
 
   const handleOrder = useCallback((pkg: Package, e: React.MouseEvent<HTMLButtonElement>) => {
     createRipple(e.currentTarget, e)
@@ -87,7 +105,7 @@ export default function Services() {
   }
 
   return (
-    <section className="services" id="services">
+    <section className="services" id="services" ref={sectionRef}>
       <div className="container">
         <div className="services-header">
           <div className="section-tag">Paket Layanan</div>
