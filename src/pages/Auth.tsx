@@ -63,10 +63,9 @@ export default function Auth() {
           await createProfile(data.user.id, name.trim())
         }
 
-        setSuccess('Akun berhasil dibuat! Silakan cek email untuk verifikasi, lalu login.')
-        setMode('login')
-        setPassword('')
-        setName('')
+        // Email confirmation is disabled — user is logged in immediately
+        // AuthContext will pick up the session and redirect automatically
+        setSuccess('Akun berhasil dibuat! Sedang mengarahkan...')
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
