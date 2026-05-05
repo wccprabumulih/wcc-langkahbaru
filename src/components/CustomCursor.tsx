@@ -11,14 +11,33 @@ export default function CustomCursor() {
 
     let mouseX = 0, mouseY = 0
     let ringX = 0, ringY = 0
+    let visible = false
     let animId: number
+
+    const show = () => {
+      if (!visible) {
+        visible = true
+        dot.style.opacity = '1'
+        ring.style.opacity = ring.classList.contains('hovered') ? '0.6' : '1'
+      }
+    }
+
+    const hide = () => {
+      visible = false
+      dot.style.opacity = '0'
+      ring.style.opacity = '0'
+    }
 
     const onMove = (e: MouseEvent) => {
       mouseX = e.clientX
       mouseY = e.clientY
       dot.style.left = mouseX + 'px'
       dot.style.top = mouseY + 'px'
+      show()
     }
+
+    const onLeave = () => hide()
+    const onEnter = () => show()
 
     const animate = () => {
       ringX += (mouseX - ringX) * 0.12
@@ -30,23 +49,36 @@ export default function CustomCursor() {
     animate()
 
     document.addEventListener('mousemove', onMove)
+    document.documentElement.addEventListener('mouseleave', onLeave)
+    document.documentElement.addEventListener('mouseenter', onEnter)
 
-    const hoverEls = document.querySelectorAll('a, button, .service-card, .gallery-item, .testi-card')
-    hoverEls.forEach(el => {
-      el.addEventListener('mouseenter', () => ring.classList.add('hovered'))
-      el.addEventListener('mouseleave', () => ring.classList.remove('hovered'))
-    })
+    const addHoverListeners = () => {
+      const hoverEls = document.querySelectorAll('a, button, .service-card, .gallery-item, .testi-card, input, select, textarea, label[for]')
+      hoverEls.forEach(el => {
+        el.addEventListener('mouseenter', () => ring.classList.add('hovered'))
+        el.addEventListener('mouseleave', () => ring.classList.remove('hovered'))
+      })
+    }
+
+    addHoverListeners()
+
+    // Re-attach after dynamic content
+    const observer = new MutationObserver(addHoverListeners)
+    observer.observe(document.body, { childList: true, subtree: true })
 
     return () => {
       document.removeEventListener('mousemove', onMove)
+      document.documentElement.removeEventListener('mouseleave', onLeave)
+      document.documentElement.removeEventListener('mouseenter', onEnter)
       cancelAnimationFrame(animId)
+      observer.disconnect()
     }
   }, [])
 
   return (
     <div className="cursor">
-      <div className="cursor-dot" ref={dotRef} />
-      <div className="cursor-ring" ref={ringRef} />
+      <div className="cursor-dot" ref={dotRef} style={{ opacity: 0 }} />
+      <div className="cursor-ring" ref={ringRef} style={{ opacity: 0 }} />
     </div>
   )
 }

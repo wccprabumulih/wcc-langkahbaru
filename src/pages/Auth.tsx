@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
 type Mode = 'login' | 'register'
 
 export default function Auth() {
-  const [mode, setMode] = useState<Mode>('login')
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
+  const [mode, setMode] = useState<Mode>(initialTab)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
@@ -91,7 +93,6 @@ export default function Auth() {
       <div className="auth-page">
         <div className="auth-bg"><div className="orb orb-1" /><div className="orb orb-2" /></div>
         <div className="auth-card" style={{ textAlign: 'center', padding: '60px 40px' }}>
-          <div style={{ fontSize: '2rem', marginBottom: 12 }}>⏳</div>
           <div style={{ color: 'var(--white-muted)', fontSize: 14 }}>Memuat...</div>
         </div>
       </div>
@@ -129,8 +130,8 @@ export default function Auth() {
           <p>{mode === 'login' ? 'Masuk untuk melanjutkan' : 'Daftar untuk memesan layanan kami'}</p>
         </div>
 
-        {error && <div className="auth-alert error"><span>⚠️</span> {error}</div>}
-        {success && <div className="auth-alert success"><span>✅</span> {success}</div>}
+        {error && <div className="auth-alert error">{error}</div>}
+        {success && <div className="auth-alert success">{success}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
           {mode === 'register' && (
@@ -166,14 +167,14 @@ export default function Auth() {
                 placeholder={mode === 'register' ? 'Minimal 6 karakter' : 'Masukkan password'}
                 autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                 value={password} onChange={e => setPassword(e.target.value)} required />
-              <button type="button" className="input-eye" onClick={() => setShowPass(s => !s)}>
-                {showPass ? '🙈' : '👁️'}
+              <button type="button" className="input-eye" onClick={() => setShowPass(s => !s)} aria-label={showPass ? 'Sembunyikan password' : 'Tampilkan password'}>
+                {showPass ? '●' : '○'}
               </button>
             </div>
           </div>
 
           <button type="submit" className="btn-primary auth-submit" disabled={loading}>
-            {loading ? '⏳ Memproses...' : mode === 'login' ? '🔐 Masuk' : '✨ Buat Akun'}
+            {loading ? 'Memproses...' : mode === 'login' ? 'Masuk' : 'Buat Akun'}
           </button>
         </form>
 

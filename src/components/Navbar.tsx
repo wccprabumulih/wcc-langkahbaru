@@ -127,10 +127,10 @@ export default function Navbar() {
                   </div>
                   <div className="nav-dropdown-divider" />
                   <button className="nav-dropdown-item" onClick={() => { setProfileOpen(false); scrollTo('#booking') }}>
-                    📋 Buat Pesanan
+                    Buat Pesanan
                   </button>
                   <button className="nav-dropdown-item danger" onClick={handleSignOut}>
-                    🚪 Keluar
+                    Keluar
                   </button>
                 </div>
               )}
@@ -138,7 +138,7 @@ export default function Navbar() {
           ) : (
             /* NOT LOGGED IN — Masuk button */
             <button className="btn-nav-cta" onClick={() => navigate('/auth')}>
-              🔐 Masuk
+              Masuk
             </button>
           )}
 
@@ -171,12 +171,20 @@ export default function Navbar() {
             <button className="mobile-menu-signout" onClick={handleSignOut}>Keluar</button>
           </div>
         ) : (
-          <button
-            className="btn-primary"
-            onClick={() => { setMenuOpen(false); navigate('/auth') }}
-          >
-            🔐 Masuk / Daftar
-          </button>
+          <div className="mobile-menu-auth-btns">
+            <button
+              className="btn-primary"
+              onClick={() => { setMenuOpen(false); navigate('/auth?tab=login') }}
+            >
+              Masuk
+            </button>
+            <button
+              className="btn-outline"
+              onClick={() => { setMenuOpen(false); navigate('/auth?tab=register') }}
+            >
+              Daftar
+            </button>
+          </div>
         )}
       </div>
     </>
