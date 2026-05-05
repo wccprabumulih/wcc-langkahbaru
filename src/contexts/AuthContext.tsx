@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react'
+import { createContext, useContext, useCallback, useEffect, useRef, useState, ReactNode } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null
   role: UserRole
   loading: boolean
+  refreshRole: () => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   role: null,
   loading: true,
+  refreshRole: async () => {},
   signOut: async () => {},
 })
 
@@ -40,6 +42,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<UserRole>(null)
   const [loading, setLoading] = useState(true)
   const initialised = useRef(false)
+  const userRef = useRef<User | null>(null)
+
+  // Keep userRef in sync so the visibility handler can read it without stale closure
+  useEffect(() => { userRef.current = user }, [user])
+
+  // Manually re-fetch the role from DB — call this after changing a role
+  const refreshRole = useCallback(async () => {
+    const currentUser = userRef.current
+    if (!currentUser) return
+    const r = await fetchRole(currentUser.id)
+    setRole(r)
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -67,7 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return
       // Skip the INITIAL_SESSION echo — getSession() already handled it.
-      // Only process events once the initial load is confirmed.
       if (!initialised.current) return
       setSession(session)
       setUser(session?.user ?? null)
@@ -79,9 +92,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })
 
+    // Re-fetch the role whenever the tab becomes visible again.
+    // This catches cases where the role was changed externally (e.g. Supabase
+    // dashboard or admin panel) while the user was on another tab.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && userRef.current) {
+        fetchRole(userRef.current.id).then(r => { if (mounted) setRole(r) })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+
     return () => {
       mounted = false
       subscription.unsubscribe()
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])
 
@@ -91,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, loading, refreshRole, signOut }}>
       {children}
     </AuthContext.Provider>
   )
