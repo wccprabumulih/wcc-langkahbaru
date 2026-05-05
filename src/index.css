@@ -21,7 +21,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; font-size: 16px; }
+html { scroll-behavior: smooth; font-size: 16px; overflow-x: hidden; max-width: 100%; }
 body {
   background: var(--bg-deep);
   color: var(--white);
@@ -709,6 +709,7 @@ footer { padding: 80px 0 40px; border-top: 1px solid var(--border); }
   .cursor { display: none; }
   .about-accent-card { right: -10px; }
   .about-accent-card2 { left: -10px; }
+  .hero-eyebrow { font-size: 9px; letter-spacing: 1.5px; padding: 5px 12px; gap: 7px; margin-bottom: 20px; }
 }
 @media (max-width: 480px) {
   .stats .container { grid-template-columns: repeat(2, 1fr); gap: 24px; }
