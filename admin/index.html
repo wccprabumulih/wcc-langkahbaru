@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel – WCC Langkah Baru</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    :root {
+      --bg:    #050709; --card: #0c0f14; --teal: #00d4b8;
+      --gold:  #c9a84c; --white: #f0ece4; --muted: #a09b93;
+      --border:rgba(255,255,255,0.07); --radius:12px;
+    }
+    body { background:var(--bg); color:var(--white); font-family:'Outfit',sans-serif; min-height:100vh; }
+    .header {
+      background:var(--card); border-bottom:1px solid var(--border);
+      padding:16px 32px; display:flex; align-items:center; justify-content:space-between;
+    }
+    .header h1 { font-size:1.2rem; font-weight:700; }
+    .header h1 span { color:var(--teal); }
+    .header a { font-size:13px; color:var(--muted); text-decoration:none; }
+    .header a:hover { color:var(--teal); }
+    .main { max-width:1200px; margin:0 auto; padding:32px 24px; }
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+    .stat-box {
+      background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+      padding:20px; text-align:center;
+    }
+    .stat-box .num { font-size:2rem; font-weight:700; color:var(--teal); }
+    .stat-box .lbl { font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-top:4px; }
+    .filters { display:flex; gap:10px; margin-bottom:24px; }
+    .filter-btn {
+      padding:8px 18px; border-radius:50px; font-size:12px; font-weight:600;
+      letter-spacing:1px; text-transform:uppercase; border:1px solid var(--border);
+      background:transparent; color:var(--muted); cursor:pointer;
+      transition:all 0.3s;
+    }
+    .filter-btn.active, .filter-btn:hover { background:rgba(0,212,184,0.1); border-color:rgba(0,212,184,0.3); color:var(--teal); }
+    .table-wrap { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    th {
+      text-align:left; padding:14px 16px; font-size:11px; font-weight:600;
+      letter-spacing:2px; text-transform:uppercase; color:var(--muted);
+      border-bottom:1px solid var(--border); background:rgba(255,255,255,0.02);
+    }
+    td { padding:14px 16px; font-size:13px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:rgba(255,255,255,0.02); }
+    .badge {
+      display:inline-block; padding:3px 10px; border-radius:50px;
+      font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+    }
+    .badge.pending   { background:rgba(255,190,0,0.1); color:#ffbe00; border:1px solid rgba(255,190,0,0.2); }
+    .badge.confirmed { background:rgba(0,212,184,0.1); color:var(--teal); border:1px solid rgba(0,212,184,0.2); }
+    .badge.done      { background:rgba(100,220,100,0.1); color:#6dc96d; border:1px solid rgba(100,220,100,0.2); }
+    .pkg-silver  { color:#ccc; }
+    .pkg-gold    { color:var(--gold); }
+    .pkg-premium { color:var(--teal); }
+    select.status-sel {
+      background:var(--bg); border:1px solid var(--border); color:var(--white);
+      padding:6px 10px; border-radius:8px; font-family:'Outfit',sans-serif;
+      font-size:12px; cursor:pointer;
+    }
+    .wa-link { color:var(--teal); text-decoration:none; font-size:12px; }
+    .wa-link:hover { text-decoration:underline; }
+    .empty { text-align:center; padding:60px; color:var(--muted); }
+    .empty .em-icon { font-size:3rem; margin-bottom:12px; }
+    .loading { text-align:center; padding:40px; color:var(--muted); }
+    @media(max-width:768px) {
+      .stats-row { grid-template-columns:repeat(2,1fr); }
+      .table-wrap { overflow-x:auto; }
+      table { min-width:700px; }
+    }
+  </style>
+</head>
+<body>
+<div class="header">
+  <h1>🎬 Admin <span>WCC Langkah Baru</span></h1>
+  <a href="../index.html">← Kembali ke Website</a>
+</div>
+
+<div class="main">
+  <div class="stats-row" id="statsRow">
+    <div class="stat-box"><div class="num" id="totalCount">-</div><div class="lbl">Total Pesanan</div></div>
+    <div class="stat-box"><div class="num" id="pendingCount">-</div><div class="lbl">Menunggu</div></div>
+    <div class="stat-box"><div class="num" id="confirmedCount">-</div><div class="lbl">Dikonfirmasi</div></div>
+    <div class="stat-box"><div class="num" id="doneCount">-</div><div class="lbl">Selesai</div></div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="">Semua</button>
+    <button class="filter-btn" data-filter="pending">⏳ Pending</button>
+    <button class="filter-btn" data-filter="confirmed">✅ Confirmed</button>
+    <button class="filter-btn" data-filter="done">🎉 Selesai</button>
+  </div>
+
+  <div class="table-wrap">
+    <div class="loading" id="loadingMsg">⏳ Memuat data...</div>
+    <table id="ordersTable" style="display:none;">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Nama</th>
+          <th>WhatsApp</th>
+          <th>Tanggal Acara</th>
+          <th>Lokasi</th>
+          <th>Paket</th>
+          <th>Catatan</th>
+          <th>Status</th>
+          <th>Dipesan</th>
+        </tr>
+      </thead>
+      <tbody id="ordersBody"></tbody>
+    </table>
+    <div class="empty" id="emptyMsg" style="display:none;">
+      <div class="em-icon">📭</div>
+      <p>Belum ada pesanan untuk filter ini.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+let allOrders = [];
+let currentFilter = '';
+
+async function loadOrders(status = '') {
+  try {
+    const url = status ? `../php/get_orders.php?status=${status}` : '../php/get_orders.php';
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.success) {
+      allOrders = data.data;
+      renderTable(allOrders);
+      updateStats(allOrders);
+    }
+  } catch(e) {
+    document.getElementById('loadingMsg').textContent = '⚠️ Database tidak tersedia. Pastikan XAMPP & PHP berjalan.';
+  }
+}
+
+function renderTable(orders) {
+  const loading = document.getElementById('loadingMsg');
+  const table   = document.getElementById('ordersTable');
+  const empty   = document.getElementById('emptyMsg');
+  const tbody   = document.getElementById('ordersBody');
+
+  loading.style.display = 'none';
+
+  if (!orders || orders.length === 0) {
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  const paketLabel = { silver:'🥈 Silver', gold:'🥇 Gold', premium:'💎 Premium' };
+  const paketClass = { silver:'pkg-silver', gold:'pkg-gold', premium:'pkg-premium' };
+
+  tbody.innerHTML = orders.map((o, i) => `
+    <tr>
+      <td style="color:var(--muted)">#${o.id}</td>
+      <td><strong>${escHtml(o.nama)}</strong></td>
+      <td>
+        <a class="wa-link" href="https://wa.me/${o.whatsapp.replace(/\D/g,'')}?text=${encodeURIComponent('Halo '+o.nama+'! Konfirmasi pesanan WCC Langkah Baru kamu sudah kami terima ✅')}" target="_blank">
+          ${escHtml(o.whatsapp)}
+        </a>
+      </td>
+      <td>${formatDate(o.tanggal)}</td>
+      <td>${escHtml(o.lokasi)}</td>
+      <td class="${paketClass[o.paket] || ''}">${paketLabel[o.paket] || o.paket}</td>
+      <td style="color:var(--muted);max-width:160px;">${o.catatan ? escHtml(o.catatan).substring(0,60) + (o.catatan.length > 60 ? '…' : '') : '-'}</td>
+      <td>
+        <select class="status-sel" data-id="${o.id}" onchange="updateStatus(this)">
+          <option value="pending"   ${o.status==='pending'   ?'selected':''}>⏳ Pending</option>
+          <option value="confirmed" ${o.status==='confirmed' ?'selected':''}>✅ Confirmed</option>
+          <option value="done"      ${o.status==='done'      ?'selected':''}>🎉 Done</option>
+        </select>
+      </td>
+      <td style="color:var(--muted);font-size:12px;">${formatDateTime(o.created_at)}</td>
+    </tr>
+  `).join('');
+}
+
+function updateStats(orders) {
+  document.getElementById('totalCount').textContent     = orders.length;
+  document.getElementById('pendingCount').textContent   = orders.filter(o=>o.status==='pending').length;
+  document.getElementById('confirmedCount').textContent = orders.filter(o=>o.status==='confirmed').length;
+  document.getElementById('doneCount').textContent      = orders.filter(o=>o.status==='done').length;
+}
+
+async function updateStatus(sel) {
+  const id     = sel.dataset.id;
+  const status = sel.value;
+  try {
+    const res  = await fetch('../php/update_status.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status })
+    });
+    const data = await res.json();
+    if (!data.success) alert('Gagal update status: ' + data.message);
+    else loadOrders(currentFilter);
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    document.getElementById('loadingMsg').style.display = 'block';
+    document.getElementById('ordersTable').style.display = 'none';
+    document.getElementById('emptyMsg').style.display = 'none';
+    document.getElementById('loadingMsg').textContent = '⏳ Memuat data...';
+    loadOrders(currentFilter);
+  });
+});
+
+function formatDate(s) {
+  if (!s) return '-';
+  const d = new Date(s);
+  const m = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`;
+}
+function formatDateTime(s) {
+  if (!s) return '-';
+  const d = new Date(s);
+  return formatDate(s) + ' ' + d.toTimeString().slice(0,5);
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+loadOrders();
+</script>
+</body>
+</html>
