@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 function compressImage(file: File, maxW = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -37,6 +38,7 @@ function AboutPhotoSlot({ token }: { token: string }) {
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) { setMsg({ type: 'err', text: 'File harus berupa gambar.' }); return }
+    if (!token) { setMsg({ type: 'err', text: 'Sesi tidak ditemukan. Silakan login ulang.' }); return }
     setLoading(true); setMsg(null)
     try {
       const compressed = await compressImage(file)
@@ -58,6 +60,7 @@ function AboutPhotoSlot({ token }: { token: string }) {
   }
 
   const handleDelete = async () => {
+    if (!token) { setMsg({ type: 'err', text: 'Sesi tidak ditemukan. Silakan login ulang.' }); return }
     setLoading(true); setMsg(null)
     try {
       const res = await fetch('/api/admin/images/about-main', {
@@ -110,23 +113,15 @@ function AboutPhotoSlot({ token }: { token: string }) {
 }
 
 export default function AdminPengaturan() {
-  const { user, signOut } = useAuth()
-  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' })
+  const { user, session, signOut } = useAuth()
+  const token = session?.access_token ?? ''
+
+  const [pwForm, setPwForm] = useState({ next: '', confirm: '' })
   const [pwMsg, setPwMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
   const [pwLoading, setPwLoading] = useState(false)
-  const [token, setToken] = useState('')
 
   const adminName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Admin'
   const adminInitial = adminName.charAt(0).toUpperCase()
-
-  useEffect(() => {
-    import('@supabase/supabase-js').then(({ createClient }) => {
-      const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session?.access_token) setToken(data.session.access_token)
-      })
-    })
-  }, [])
 
   const handleChangePw = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -135,12 +130,10 @@ export default function AdminPengaturan() {
     if (pwForm.next.length < 6) { setPwMsg({ type: 'err', text: 'Password minimal 6 karakter.' }); return }
     setPwLoading(true)
     try {
-      const { createClient } = await import('@supabase/supabase-js')
-      const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
       const { error } = await supabase.auth.updateUser({ password: pwForm.next })
       if (error) throw error
       setPwMsg({ type: 'ok', text: 'Password berhasil diubah.' })
-      setPwForm({ current: '', next: '', confirm: '' })
+      setPwForm({ next: '', confirm: '' })
     } catch (err: unknown) {
       setPwMsg({ type: 'err', text: err instanceof Error ? err.message : 'Gagal mengubah password.' })
     } finally {

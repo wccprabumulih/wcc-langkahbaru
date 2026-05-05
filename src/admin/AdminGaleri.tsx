@@ -26,7 +26,8 @@ function compressImage(file: File, maxW = 1400, quality = 0.80): Promise<string>
 }
 
 export default function AdminGaleri() {
-  const { user } = useAuth()
+  const { session } = useAuth()
+  const token = session?.access_token ?? ''
   const [photos, setPhotos] = useState<Photo[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -34,20 +35,10 @@ export default function AdminGaleri() {
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
-  const [token, setToken] = useState('')
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const LIMIT = 24
-
-  useEffect(() => {
-    import('@supabase/supabase-js').then(({ createClient }) => {
-      const supabase = createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY)
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session?.access_token) setToken(data.session.access_token)
-      })
-    })
-  }, [])
 
   const fetchPhotos = async (p = 1, append = false) => {
     setLoading(true)
