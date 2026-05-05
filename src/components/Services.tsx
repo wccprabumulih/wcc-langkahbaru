@@ -1,44 +1,19 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 const WA_NUMBER = '6281532477237'
 
-const packages = [
-  {
-    id: 'silver', badge: '🥈 Silver', price: '250K',
-    features: [
-      'Up 6 Story Instagram yang estetik',
-      'Editing Video Story dalam <24 Jam',
-      '1 Reels Instagram atau TikTok',
-      'Video Mentah dikirim via Google Drive',
-    ],
-    waMsg: 'Halo kak! Saya tertarik dengan Silver Package (250K). Bisa info lebih lanjut? 🥈',
-    ctaClass: 'btn-outline',
-  },
-  {
-    id: 'gold', badge: '🥇 Gold', price: '300K', popular: true,
-    features: [
-      'Up 8 Story Instagram premium',
-      'Editing Video Story dalam <24 Jam',
-      '1 Video Cinematic minimal 1 Menit',
-      '1-2 Reels Instagram atau TikTok',
-      'Video Mentah dikirim via Google Drive',
-    ],
-    waMsg: 'Halo kak! Saya tertarik dengan Gold Package (300K). Bisa info lebih lanjut? 🥇',
-    ctaClass: 'btn-primary',
-  },
-  {
-    id: 'premium', badge: '💎 Premium', price: '400K',
-    features: [
-      'Up 12 Story Instagram full coverage',
-      'Editing Video Story dalam <24 Jam',
-      '2 Video Cinematic minimal 1 Menit',
-      '2-4 Reels Instagram atau TikTok',
-      'Video Mentah dikirim via Google Drive',
-    ],
-    waMsg: 'Halo kak! Saya tertarik dengan Premium Package (400K). Bisa info lebih lanjut? 💎',
-    ctaClass: 'btn-primary',
-  },
-]
+interface Package {
+  id: number
+  key: string
+  label: string
+  price: string
+  price_note: string
+  badge: string
+  popular: boolean
+  features: string[]
+  wa_msg: string
+  cta_class: string
+}
 
 function createRipple(el: HTMLElement, e: React.MouseEvent) {
   const rect = el.getBoundingClientRect()
@@ -62,12 +37,25 @@ function createRipple(el: HTMLElement, e: React.MouseEvent) {
 }
 
 export default function Services() {
-  const handleOrder = useCallback((pkg: typeof packages[0], e: React.MouseEvent<HTMLButtonElement>) => {
+  const [packages, setPackages] = useState<Package[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch('/api/packages')
+      .then(r => r.json())
+      .then(data => { if (data.success) setPackages(data.data) })
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleOrder = useCallback((pkg: Package, e: React.MouseEvent<HTMLButtonElement>) => {
     createRipple(e.currentTarget, e)
-    // Set booking form package
+    if (pkg.wa_msg) {
+      window.open(`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(pkg.wa_msg)}`, '_blank')
+      return
+    }
     const select = document.querySelector<HTMLSelectElement>('[name="paket"]')
     if (select) {
-      select.value = pkg.id
+      select.value = pkg.key
       select.dispatchEvent(new Event('change'))
       select.style.borderColor = 'var(--teal)'
       select.style.boxShadow = '0 0 0 3px var(--teal-dim)'
@@ -76,6 +64,20 @@ export default function Services() {
     const booking = document.getElementById('booking')
     if (booking) booking.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
+
+  if (loading) {
+    return (
+      <section className="services" id="services">
+        <div className="container">
+          <div className="services-header">
+            <div className="section-tag">Paket Layanan</div>
+            <h2 className="section-title">Pilih Paket <span>Terbaikmu</span></h2>
+          </div>
+          <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--white-muted)' }}>Memuat paket...</div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="services" id="services">
@@ -89,11 +91,11 @@ export default function Services() {
         </div>
         <div className="services-grid">
           {packages.map((pkg, i) => (
-            <div key={pkg.id} className={`service-card ${pkg.id} reveal`} style={{ transitionDelay: `${i * 0.1}s` }}>
+            <div key={pkg.id} className={`service-card ${pkg.key} reveal`} style={{ transitionDelay: `${i * 0.1}s` }}>
               {pkg.popular && <div className="most-popular">Terpopuler</div>}
               <div className="card-badge">{pkg.badge}</div>
               <div className="card-price">{pkg.price}</div>
-              <div className="card-price-period">per hari acara</div>
+              <div className="card-price-period">{pkg.price_note}</div>
               <div className="card-divider" />
               <ul className="card-features">
                 {pkg.features.map((f, j) => (
@@ -103,7 +105,7 @@ export default function Services() {
                   </li>
                 ))}
               </ul>
-              <button className="card-cta" onClick={e => handleOrder(pkg, e)}>
+              <button className={`card-cta${pkg.cta_class === 'btn-outline' ? ' outline' : ''}`} onClick={e => handleOrder(pkg, e)}>
                 Pesan Paket Ini →
               </button>
             </div>
