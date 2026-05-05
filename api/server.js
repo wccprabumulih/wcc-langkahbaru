@@ -197,12 +197,77 @@ app.post('/api/orders/:id/status', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    const validStatus = ['pending', 'confirmed', 'done'];
+    const validStatus = ['pending', 'confirmed', 'done', 'canceled'];
     if (!validStatus.includes(status)) {
       return res.status(400).json({ success: false, message: 'Status tidak valid' });
     }
     await pool.query('UPDATE orders SET status = $1 WHERE id = $2', [status, id]);
     res.json({ success: true, message: 'Status berhasil diupdate' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/orders/:id (admin only)
+app.delete('/api/orders/:id', requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM orders WHERE id = $1', [id]);
+    if (result.rowCount === 0) return res.status(404).json({ success: false, message: 'Pesanan tidak ditemukan' });
+    res.json({ success: true, message: 'Pesanan berhasil dihapus' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── Reviews ─────────────────────────────────────────────────────────────────
+
+// ─── Site Content (About, etc.) ──────────────────────────────────────────────
+
+pool.query(`
+  CREATE TABLE IF NOT EXISTS site_content (
+    key        TEXT PRIMARY KEY,
+    value      JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )
+`).catch(err => console.error('site_content table init error:', err.message));
+
+const DEFAULT_ABOUT = {
+  heading: 'Kami Bukan Sekadar',
+  heading_highlight: 'Merekam',
+  desc1: 'WCC Langkah Baru adalah layanan Wedding Content Creator yang hadir untuk mengabadikan hari istimewamu dengan sentuhan sinematik yang memukau. Setiap frame kami rancang dengan penuh rasa.',
+  desc2: 'Dari story Instagram yang captivating hingga reels yang viral-worthy — kami pastikan momen pernikahanmu terdokumentasi dan siap dibagikan ke dunia.',
+  instagram: '@wcc.prabumulih',
+  availability: 'By Request 🗓️',
+  features: [
+    { icon: '🎬', title: 'Videografi Sinematik', desc: 'Setiap momen direkam dengan gaya cinematic yang elegan dan berkelas' },
+    { icon: '✂️', title: 'Editing Profesional', desc: 'Hasil editing yang halus, estetik, dan siap tayang dalam waktu singkat' },
+    { icon: '📲', title: 'Siap Posting', desc: 'Konten langsung bisa di-upload ke Instagram/TikTok' },
+    { icon: '☁️', title: 'Video Mentah via Google Drive', desc: 'Semua footage mentah dikirimkan lewat Google Drive untuk koleksi pribadimu' },
+  ],
+};
+
+// GET /api/content/about — public
+app.get('/api/content/about', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT value FROM site_content WHERE key = $1', ['about']);
+    const data = result.rows[0]?.value ?? DEFAULT_ABOUT;
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/admin/content/about — admin only
+app.put('/api/admin/content/about', requireAdmin, async (req, res) => {
+  try {
+    const value = req.body;
+    await pool.query(
+      `INSERT INTO site_content (key, value, updated_at) VALUES ('about', $1, NOW())
+       ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
+      [JSON.stringify(value)]
+    );
+    res.json({ success: true, message: 'Konten berhasil disimpan' });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -7,9 +7,10 @@ import AdminPengguna from '../admin/AdminPengguna'
 import AdminPaket from '../admin/AdminPaket'
 import AdminUlasan from '../admin/AdminUlasan'
 import AdminGaleri from '../admin/AdminGaleri'
+import AdminTentangKami from '../admin/AdminTentangKami'
 import AdminPengaturan from '../admin/AdminPengaturan'
 
-type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'galeri' | 'pengaturan'
+type Page = 'dashboard' | 'pesanan' | 'pengguna' | 'paket' | 'ulasan' | 'galeri' | 'tentang' | 'pengaturan'
 
 const pageTitle: Record<Page, string> = {
   dashboard: 'Dashboard',
@@ -18,6 +19,7 @@ const pageTitle: Record<Page, string> = {
   paket: 'Paket',
   ulasan: 'Ulasan',
   galeri: 'Galeri',
+  tentang: 'Tentang Kami',
   pengaturan: 'Pengaturan',
 }
 
@@ -73,6 +75,14 @@ function IconGaleri() {
     </svg>
   )
 }
+function IconTentang() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+      <circle cx="7.5" cy="7.5" r="6" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M7.5 7v4M7.5 4.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  )
+}
 function IconPengaturan() {
   return (
     <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
@@ -89,6 +99,7 @@ const navItems: { key: Page; Icon: () => JSX.Element; label: string }[] = [
   { key: 'paket',      Icon: IconPaket,      label: 'Paket' },
   { key: 'ulasan',     Icon: IconUlasan,     label: 'Ulasan' },
   { key: 'galeri',     Icon: IconGaleri,     label: 'Galeri' },
+  { key: 'tentang',    Icon: IconTentang,    label: 'Tentang Kami' },
   { key: 'pengaturan', Icon: IconPengaturan, label: 'Pengaturan' },
 ]
 
@@ -168,6 +179,7 @@ export default function Admin() {
           {page === 'paket'      && <AdminPaket />}
           {page === 'ulasan'     && <AdminUlasan />}
           {page === 'galeri'     && <AdminGaleri />}
+          {page === 'tentang'    && <AdminTentangKami />}
           {page === 'pengaturan' && <AdminPengaturan />}
         </div>
       </div>

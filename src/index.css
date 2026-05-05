@@ -607,6 +607,7 @@ footer { padding: 80px 0 40px; border-top: 1px solid var(--border); }
 .adm-status-pending  { background: rgba(245,166,35,0.12); color: #f5a623; border: 1px solid rgba(245,166,35,0.25); }
 .adm-status-confirmed { background: rgba(126,211,33,0.12); color: #7ed321; border: 1px solid rgba(126,211,33,0.25); }
 .adm-status-done { background: rgba(155,89,182,0.12); color: #b07fe8; border: 1px solid rgba(155,89,182,0.25); }
+.adm-status-canceled { background: rgba(255,112,112,0.1); color: #ff7070; border: 1px solid rgba(255,112,112,0.25); }
 
 /* Dashboard */
 .adm-dash-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px; }

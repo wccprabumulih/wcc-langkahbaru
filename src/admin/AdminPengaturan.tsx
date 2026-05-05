@@ -213,17 +213,6 @@ export default function AdminPengaturan() {
           />
         </div>
 
-        {/* About photo */}
-        <div className="adm-settings-card" style={{ gridColumn: '1 / -1' }}>
-          <div className="adm-settings-card-title">📸 Foto Tentang Kami</div>
-          <PhotoSlot
-            token={token}
-            slot="about-main"
-            label="Foto Tentang Kami"
-            description={`Foto ini tampil di section <strong style="color:var(--white)">"Tentang Kami"</strong> halaman utama.<br />Format JPG/PNG, otomatis dikompres.`}
-          />
-        </div>
-
         {/* Danger zone */}
         <div className="adm-settings-card adm-settings-danger">
           <div className="adm-settings-card-title" style={{ color: '#ff7070' }}>Zona Berbahaya</div>
