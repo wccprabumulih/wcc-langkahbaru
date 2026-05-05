@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import Footer from '../components/Footer'
 
-interface Photo { id: number; image_data: string; created_at: string }
+interface Photo { id: number; image_src: string; created_at: string }
 
 export default function Galeri() {
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -68,7 +68,7 @@ export default function Galeri() {
           onClick={() => setLightbox(null)}
         >
           <img
-            src={lightbox.image_data}
+            src={lightbox.image_src}
             alt=""
             onClick={e => e.stopPropagation()}
             style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 12, objectFit: 'contain', boxShadow: '0 0 60px rgba(0,0,0,0.8)' }}
@@ -137,7 +137,7 @@ export default function Galeri() {
                   style={{ animationDelay: `${(i % LIMIT) * 0.03}s` }}
                   onClick={() => setLightbox(photo)}
                 >
-                  <img src={photo.image_data} alt="" className="galeri-img" loading="lazy" />
+                  <img src={photo.image_src} alt="" className="galeri-img" loading="lazy" />
                   <div className="galeri-item-overlay">
                     <span style={{ fontSize: 24 }}>🔍</span>
                   </div>

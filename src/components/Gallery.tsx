@@ -12,7 +12,7 @@ const FALLBACK = [
   { icon: '🕊️', label: 'Sacred Moments' },
 ]
 
-interface Photo { id: number; image_data: string }
+interface Photo { id: number; image_src: string }
 
 export default function Gallery() {
   const [photos, setPhotos] = useState<Photo[]>([])
@@ -52,7 +52,7 @@ export default function Gallery() {
                 const p = item as Photo
                 return (
                   <div key={i} className="gallery-item" onClick={() => navigate('/galeri')}>
-                    <img src={p.image_data} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <img src={p.image_src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     <div className="gallery-overlay" />
                   </div>
                 )

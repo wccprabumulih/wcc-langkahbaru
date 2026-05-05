@@ -368,6 +368,27 @@ app.delete('/api/admin/packages/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Storage helpers ─────────────────────────────────────────────────────────
+
+function base64ToBuffer(dataUrl) {
+  const base64 = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+  return Buffer.from(base64, 'base64');
+}
+
+async function uploadToStorage(bucket, path, buffer, contentType = 'image/jpeg') {
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(path, buffer, { contentType, upsert: true });
+  if (error) throw new Error(error.message);
+  const { data: urlData } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
+  return { path: data.path, url: urlData.publicUrl };
+}
+
+async function deleteFromStorage(bucket, path) {
+  if (!path) return;
+  await supabaseAdmin.storage.from(bucket).remove([path]);
+}
+
 // ─── Gallery Photos ──────────────────────────────────────────────────────────
 
 // GET /api/gallery — public, paginated
@@ -377,7 +398,10 @@ app.get('/api/gallery', async (req, res) => {
     const limit = Math.min(50, parseInt(req.query.limit) || 20);
     const offset = (page - 1) * limit;
     const [rows, countRow] = await Promise.all([
-      pool.query('SELECT id, image_data, created_at FROM gallery_photos ORDER BY created_at DESC LIMIT $1 OFFSET $2', [limit, offset]),
+      pool.query(
+        'SELECT id, COALESCE(image_url, image_data) AS image_src, created_at FROM gallery_photos ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+        [limit, offset]
+      ),
       pool.query('SELECT COUNT(*) FROM gallery_photos'),
     ]);
     res.json({ success: true, data: rows.rows, total: parseInt(countRow.rows[0].count), page, limit });
@@ -389,15 +413,18 @@ app.get('/api/gallery', async (req, res) => {
 // POST /api/admin/gallery — admin, upload one or more photos
 app.post('/api/admin/gallery', requireAdmin, async (req, res) => {
   try {
-    const { images } = req.body; // array of base64 strings
+    const { images } = req.body;
     if (!images || !Array.isArray(images) || images.length === 0) {
       return res.status(400).json({ success: false, message: 'Tidak ada foto yang dikirim' });
     }
     const inserted = [];
-    for (const image_data of images) {
+    for (const base64 of images) {
+      const buf = base64ToBuffer(base64);
+      const filename = `${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+      const { path, url } = await uploadToStorage('gallery', filename, buf);
       const r = await pool.query(
-        'INSERT INTO gallery_photos (image_data) VALUES ($1) RETURNING id, created_at',
-        [image_data]
+        'INSERT INTO gallery_photos (image_url, storage_path) VALUES ($1, $2) RETURNING id, created_at',
+        [url, path]
       );
       inserted.push(r.rows[0]);
     }
@@ -411,6 +438,10 @@ app.post('/api/admin/gallery', requireAdmin, async (req, res) => {
 app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    const row = await pool.query('SELECT storage_path FROM gallery_photos WHERE id = $1', [id]);
+    if (row.rows[0]?.storage_path) {
+      await deleteFromStorage('gallery', row.rows[0].storage_path);
+    }
     await pool.query('DELETE FROM gallery_photos WHERE id = $1', [id]);
     res.json({ success: true, message: 'Foto berhasil dihapus' });
   } catch (err) {
@@ -423,7 +454,7 @@ app.delete('/api/admin/gallery/:id', requireAdmin, async (req, res) => {
 // GET /api/images — public, returns all uploaded images
 app.get('/api/images', async (req, res) => {
   try {
-    const result = await pool.query('SELECT slot, image_data, label FROM site_images');
+    const result = await pool.query('SELECT slot, COALESCE(image_url, image_data) AS image_data, label FROM site_images');
     const map = {};
     result.rows.forEach(r => { map[r.slot] = { image_data: r.image_data, label: r.label }; });
     res.json({ success: true, data: map });
@@ -438,13 +469,24 @@ app.put('/api/admin/images/:slot', requireAdmin, async (req, res) => {
     const { slot } = req.params;
     const { image_data, label } = req.body;
     if (!image_data) return res.status(400).json({ success: false, message: 'image_data wajib diisi' });
+
+    // Delete old file from storage if exists
+    const existing = await pool.query('SELECT storage_path FROM site_images WHERE slot = $1', [slot]);
+    if (existing.rows[0]?.storage_path) {
+      await deleteFromStorage('site-images', existing.rows[0].storage_path);
+    }
+
+    const buf = base64ToBuffer(image_data);
+    const filename = `${slot}_${Date.now()}.jpg`;
+    const { path, url } = await uploadToStorage('site-images', filename, buf);
+
     await pool.query(
-      `INSERT INTO site_images (slot, image_data, label, updated_at)
-       VALUES ($1, $2, $3, NOW())
-       ON CONFLICT (slot) DO UPDATE SET image_data=$2, label=$3, updated_at=NOW()`,
-      [slot, image_data, label || '']
+      `INSERT INTO site_images (slot, image_url, storage_path, label, updated_at)
+       VALUES ($1, $2, $3, $4, NOW())
+       ON CONFLICT (slot) DO UPDATE SET image_url=$2, storage_path=$3, image_data=NULL, label=$4, updated_at=NOW()`,
+      [slot, url, path, label || '']
     );
-    res.json({ success: true, message: 'Foto berhasil disimpan' });
+    res.json({ success: true, message: 'Foto berhasil disimpan', url });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -454,6 +496,10 @@ app.put('/api/admin/images/:slot', requireAdmin, async (req, res) => {
 app.delete('/api/admin/images/:slot', requireAdmin, async (req, res) => {
   try {
     const { slot } = req.params;
+    const existing = await pool.query('SELECT storage_path FROM site_images WHERE slot = $1', [slot]);
+    if (existing.rows[0]?.storage_path) {
+      await deleteFromStorage('site-images', existing.rows[0].storage_path);
+    }
     await pool.query('DELETE FROM site_images WHERE slot = $1', [slot]);
     res.json({ success: true, message: 'Foto berhasil dihapus' });
   } catch (err) {

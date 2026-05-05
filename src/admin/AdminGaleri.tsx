@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
-interface Photo { id: number; image_data: string; created_at: string }
+interface Photo { id: number; image_src: string; created_at: string }
 
 function compressImage(file: File, maxW = 1400, quality = 0.80): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -194,13 +194,13 @@ export default function AdminGaleri() {
         {photos.map(photo => (
           <div key={photo.id} className="adm-galeri-item">
             <img
-              src={photo.image_data}
+              src={photo.image_src}
               alt=""
               className="adm-galeri-img"
-              onClick={() => setLightbox(photo.image_data)}
+              onClick={() => setLightbox(photo.image_src)}
             />
             <div className="adm-galeri-overlay">
-              <button className="adm-galeri-view" onClick={() => setLightbox(photo.image_data)}>🔍</button>
+              <button className="adm-galeri-view" onClick={() => setLightbox(photo.image_src)}>🔍</button>
               <button
                 className="adm-galeri-del"
                 onClick={() => handleDelete(photo.id)}
