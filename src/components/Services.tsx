@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react'
 
 const WA_NUMBER = '6281532477237'
 
+const THEMES = ['silver', 'gold', 'premium']
+
 interface Package {
   id: number
   key: string
@@ -34,6 +36,11 @@ function createRipple(el: HTMLElement, e: React.MouseEvent) {
   el.style.overflow = 'hidden'
   el.appendChild(ripple)
   setTimeout(() => ripple.remove(), 700)
+}
+
+function getThemeClass(pkg: Package, index: number): string {
+  if (THEMES.includes(pkg.key)) return pkg.key
+  return THEMES[index % THEMES.length]
 }
 
 export default function Services() {
@@ -90,26 +97,29 @@ export default function Services() {
           </p>
         </div>
         <div className="services-grid">
-          {packages.map((pkg, i) => (
-            <div key={pkg.id} className={`service-card ${pkg.key} reveal`} style={{ transitionDelay: `${i * 0.1}s` }}>
-              {pkg.popular && <div className="most-popular">Terpopuler</div>}
-              <div className="card-badge">{pkg.badge}</div>
-              <div className="card-price">{pkg.price}</div>
-              <div className="card-price-period">{pkg.price_note}</div>
-              <div className="card-divider" />
-              <ul className="card-features">
-                {pkg.features.map((f, j) => (
-                  <li key={j} className="card-feature">
-                    <span className="check">✓</span>
-                    <span dangerouslySetInnerHTML={{ __html: f }} />
-                  </li>
-                ))}
-              </ul>
-              <button className={`card-cta${pkg.cta_class === 'btn-outline' ? ' outline' : ''}`} onClick={e => handleOrder(pkg, e)}>
-                Pesan Paket Ini →
-              </button>
-            </div>
-          ))}
+          {packages.map((pkg, i) => {
+            const theme = getThemeClass(pkg, i)
+            return (
+              <div key={pkg.id} className={`service-card ${theme} reveal`} style={{ transitionDelay: `${i * 0.1}s` }}>
+                {pkg.popular && <div className="most-popular">Terpopuler</div>}
+                <div className="card-badge">{pkg.badge || pkg.label}</div>
+                <div className="card-price">{pkg.price}</div>
+                <div className="card-price-period">{pkg.price_note}</div>
+                <div className="card-divider" />
+                <ul className="card-features">
+                  {pkg.features.map((f, j) => (
+                    <li key={j} className="card-feature">
+                      <span className="check">✓</span>
+                      <span dangerouslySetInnerHTML={{ __html: f }} />
+                    </li>
+                  ))}
+                </ul>
+                <button className={`card-cta${pkg.cta_class === 'btn-outline' ? ' outline' : ''}`} onClick={e => handleOrder(pkg, e)}>
+                  Pesan Paket Ini →
+                </button>
+              </div>
+            )
+          })}
         </div>
       </div>
     </section>

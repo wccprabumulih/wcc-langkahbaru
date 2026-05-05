@@ -1,13 +1,15 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Modal from './Modal'
 import Toast, { ToastData } from './Toast'
 
 const WA_NUMBER = '6281532477237'
 
-const paketLabels: Record<string, string> = {
-  silver: 'Silver Package (250K)',
-  gold: 'Gold Package (300K)',
-  premium: 'Premium Package (400K)',
+interface Package {
+  id: number
+  key: string
+  label: string
+  price: string
+  wa_msg: string
 }
 
 function formatDate(dateStr: string) {
@@ -25,10 +27,18 @@ const contactItems = [
 
 export default function Booking() {
   const [loading, setLoading] = useState(false)
+  const [packages, setPackages] = useState<Package[]>([])
   const [toast, setToast] = useState<ToastData | null>(null)
   const [modal, setModal] = useState<{ open: boolean; title: string; desc: string; waUrl: string }>({
     open: false, title: '', desc: '', waUrl: '',
   })
+
+  useEffect(() => {
+    fetch('/api/packages')
+      .then(r => r.json())
+      .then(data => { if (data.success) setPackages(data.data) })
+      .catch(() => {})
+  }, [])
 
   const showToast = useCallback((type: 'success' | 'error', title: string, msg: string) => {
     setToast({ type, title, msg })
@@ -40,12 +50,14 @@ export default function Booking() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const form = e.currentTarget
+    const paketKey = (form.elements.namedItem('paket') as HTMLSelectElement).value
+    const selectedPkg = packages.find(p => p.key === paketKey)
     const data = {
       nama: (form.elements.namedItem('nama') as HTMLInputElement).value.trim(),
       whatsapp: (form.elements.namedItem('whatsapp') as HTMLInputElement).value.trim(),
       tanggal: (form.elements.namedItem('tanggal') as HTMLInputElement).value,
       lokasi: (form.elements.namedItem('lokasi') as HTMLInputElement).value.trim(),
-      paket: (form.elements.namedItem('paket') as HTMLSelectElement).value,
+      paket: paketKey,
       catatan: (form.elements.namedItem('catatan') as HTMLTextAreaElement).value.trim(),
     }
 
@@ -73,21 +85,25 @@ export default function Booking() {
       console.warn('Database tidak tersedia')
     }
 
-    const msg = [
-      '🎬 *PEMESANAN WCC LANGKAH BARU*',
-      orderId ? `📋 Order ID: #${orderId}` : '',
-      '',
-      `👤 *Nama:* ${data.nama}`,
-      `📱 *WhatsApp:* ${data.whatsapp}`,
-      `📅 *Tanggal:* ${formatDate(data.tanggal)}`,
-      `📍 *Lokasi:* ${data.lokasi}`,
-      `📦 *Paket:* ${paketLabels[data.paket] || data.paket}`,
-      data.catatan ? `📝 *Catatan:* ${data.catatan}` : '',
-      '',
-      '✨ Saya ingin memesan jasa Wedding Content Creator. Mohon konfirmasinya! 🙏',
-    ].filter(Boolean).join('\n')
+    const paketLabel = selectedPkg ? `${selectedPkg.label} (${selectedPkg.price})` : paketKey
 
-    const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(msg)}`
+    const waMsg = selectedPkg?.wa_msg
+      ? selectedPkg.wa_msg + `\n\n👤 *Nama:* ${data.nama}\n📱 *WA:* ${data.whatsapp}\n📅 *Tanggal:* ${formatDate(data.tanggal)}\n📍 *Lokasi:* ${data.lokasi}` + (data.catatan ? `\n📝 *Catatan:* ${data.catatan}` : '') + (orderId ? `\n📋 *Order ID:* #${orderId}` : '')
+      : [
+          '🎬 *PEMESANAN WCC LANGKAH BARU*',
+          orderId ? `📋 Order ID: #${orderId}` : '',
+          '',
+          `👤 *Nama:* ${data.nama}`,
+          `📱 *WhatsApp:* ${data.whatsapp}`,
+          `📅 *Tanggal:* ${formatDate(data.tanggal)}`,
+          `📍 *Lokasi:* ${data.lokasi}`,
+          `📦 *Paket:* ${paketLabel}`,
+          data.catatan ? `📝 *Catatan:* ${data.catatan}` : '',
+          '',
+          '✨ Saya ingin memesan jasa Wedding Content Creator. Mohon konfirmasinya! 🙏',
+        ].filter(Boolean).join('\n')
+
+    const waUrl = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(waMsg)}`
 
     setModal({
       open: true,
@@ -144,11 +160,13 @@ export default function Booking() {
               </div>
               <div className="form-group">
                 <label className="form-label" htmlFor="paket">Pilih Paket *</label>
-                <select className="form-control" id="paket" name="paket" required>
+                <select className="form-control" id="paket" name="paket" required defaultValue="">
                   <option value="" disabled>-- Pilih Paket --</option>
-                  <option value="silver">🥈 Silver Package – 250K</option>
-                  <option value="gold">🥇 Gold Package – 300K</option>
-                  <option value="premium">💎 Premium Package – 400K</option>
+                  {packages.map(pkg => (
+                    <option key={pkg.key} value={pkg.key}>
+                      {pkg.label} – {pkg.price}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>

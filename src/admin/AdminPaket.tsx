@@ -39,6 +39,7 @@ export default function AdminPaket() {
   const [form, setForm] = useState(emptyForm())
   const [featuresText, setFeaturesText] = useState('')
   const [saving, setSaving] = useState(false)
+  const [toggling, setToggling] = useState<number | null>(null)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
   const headers = {
@@ -65,6 +66,7 @@ export default function AdminPaket() {
     setFeaturesText('')
     setMsg(null)
     setShowForm(true)
+    setTimeout(() => document.querySelector<HTMLElement>('.adm-pkg-form-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   const openEdit = (pkg: Package) => {
@@ -85,6 +87,7 @@ export default function AdminPaket() {
     setFeaturesText(pkg.features.join('\n'))
     setMsg(null)
     setShowForm(true)
+    setTimeout(() => document.querySelector<HTMLElement>('.adm-pkg-form-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
   }
 
   const closeForm = () => { setShowForm(false); setEditId(null); setMsg(null) }
@@ -125,6 +128,25 @@ export default function AdminPaket() {
     }
   }
 
+  const handleToggleActive = async (pkg: Package) => {
+    setToggling(pkg.id)
+    try {
+      const body = { ...pkg, active: !pkg.active, features: pkg.features }
+      const res = await fetch(`/api/admin/packages/${pkg.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!data.success) throw new Error(data.message)
+      load()
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Gagal mengubah status.')
+    } finally {
+      setToggling(null)
+    }
+  }
+
   const set = (k: keyof typeof form, v: unknown) => setForm(f => ({ ...f, [k]: v }))
 
   return (
@@ -134,21 +156,35 @@ export default function AdminPaket() {
         <button className="adm-refresh" onClick={openCreate}>+ Tambah Paket</button>
       </div>
 
+      <div className="adm-paket-note" style={{ marginBottom: 20 }}>
+        <span>
+          Paket yang <strong>Aktif</strong> akan otomatis tampil di halaman website dan form pemesanan. Paket <strong>Nonaktif</strong> hanya terlihat di sini.
+        </span>
+      </div>
+
       {/* ── FORM ── */}
       {showForm && (
         <div className="adm-pkg-form-wrap">
           <div className="adm-pkg-form-header">
             <span className="adm-dash-card-title">{editId ? 'Edit Paket' : 'Tambah Paket Baru'}</span>
-            <button className="adm-muted" style={{ background: 'none', border: 'none', fontSize: 18, lineHeight: 1 }} onClick={closeForm}>×</button>
+            <button className="adm-muted" style={{ background: 'none', border: 'none', fontSize: 20, lineHeight: 1 }} onClick={closeForm}>×</button>
           </div>
           <form className="adm-pkg-form" onSubmit={handleSave}>
             <div className="adm-pkg-form-grid">
               <label className="adm-settings-field">
-                <span>Key (unik, huruf kecil)</span>
-                <input className="adm-input" value={form.key} onChange={e => set('key', e.target.value.toLowerCase().replace(/\s+/g, '-'))} required placeholder="contoh: silver" disabled={!!editId} />
+                <span>Key (unik, huruf kecil, tanpa spasi)</span>
+                <input
+                  className="adm-input"
+                  value={form.key}
+                  onChange={e => set('key', e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                  required
+                  placeholder="contoh: silver"
+                  disabled={!!editId}
+                />
+                {!editId && <span style={{ fontSize: 11, color: 'var(--white-muted)', marginTop: 4 }}>Digunakan sebagai ID internal. Tidak bisa diubah setelah disimpan.</span>}
               </label>
               <label className="adm-settings-field">
-                <span>Label / Nama Paket</span>
+                <span>Nama Paket</span>
                 <input className="adm-input" value={form.label} onChange={e => set('label', e.target.value)} required placeholder="contoh: Silver" />
               </label>
               <label className="adm-settings-field">
@@ -160,8 +196,8 @@ export default function AdminPaket() {
                 <input className="adm-input" value={form.price_note} onChange={e => set('price_note', e.target.value)} placeholder="per hari acara" />
               </label>
               <label className="adm-settings-field">
-                <span>Badge</span>
-                <input className="adm-input" value={form.badge} onChange={e => set('badge', e.target.value)} placeholder="contoh: Silver" />
+                <span>Teks Badge (atas kartu)</span>
+                <input className="adm-input" value={form.badge} onChange={e => set('badge', e.target.value)} placeholder="contoh: 🥈 Silver" />
               </label>
               <label className="adm-settings-field">
                 <span>Urutan Tampil</span>
@@ -170,27 +206,33 @@ export default function AdminPaket() {
             </div>
 
             <label className="adm-settings-field">
-              <span>Fitur (satu per baris)</span>
+              <span>Fitur Paket <span style={{ color: 'var(--white-muted)', fontWeight: 400 }}>(satu per baris)</span></span>
               <textarea
                 className="adm-input adm-textarea"
-                rows={5}
+                rows={6}
                 value={featuresText}
                 onChange={e => setFeaturesText(e.target.value)}
-                placeholder={'Up 8 Story Instagram premium\nEditing Video Story dalam <24 Jam'}
+                placeholder={'Up 8 Story Instagram premium\nEditing Video Story dalam <24 Jam\nResolusi Full HD\n1 Orang Fotografer'}
               />
             </label>
 
             <label className="adm-settings-field">
-              <span>Pesan WhatsApp</span>
-              <input className="adm-input" value={form.wa_msg} onChange={e => set('wa_msg', e.target.value)} placeholder="Halo kak! Saya tertarik dengan paket ini..." />
+              <span>Pesan WhatsApp Otomatis <span style={{ color: 'var(--white-muted)', fontWeight: 400 }}>(opsional — kosongkan untuk pakai template default)</span></span>
+              <textarea
+                className="adm-input adm-textarea"
+                rows={3}
+                value={form.wa_msg}
+                onChange={e => set('wa_msg', e.target.value)}
+                placeholder="Halo kak! Saya tertarik dengan paket Silver WCC Langkah Baru 🥈"
+              />
             </label>
 
             <div className="adm-pkg-form-grid">
               <label className="adm-settings-field">
-                <span>Tombol CTA</span>
+                <span>Gaya Tombol CTA</span>
                 <select className="adm-select" style={{ padding: '10px 14px' }} value={form.cta_class} onChange={e => set('cta_class', e.target.value)}>
-                  <option value="btn-primary">Solid (btn-primary)</option>
-                  <option value="btn-outline">Outline (btn-outline)</option>
+                  <option value="btn-primary">Solid / Isi penuh</option>
+                  <option value="btn-outline">Outline / Transparan</option>
                 </select>
               </label>
               <div className="adm-pkg-toggles">
@@ -200,16 +242,16 @@ export default function AdminPaket() {
                 </label>
                 <label className="adm-toggle-row">
                   <input type="checkbox" checked={form.active} onChange={e => set('active', e.target.checked)} />
-                  <span>Aktif (tampil di website)</span>
+                  <span>Aktif (tampil di website &amp; form)</span>
                 </label>
               </div>
             </div>
 
             {msg && <div className={`adm-settings-msg ${msg.type}`}>{msg.text}</div>}
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button type="submit" className="adm-refresh" style={{ padding: '10px 24px' }} disabled={saving}>
-                {saving ? 'Menyimpan...' : (editId ? 'Simpan Perubahan' : 'Tambahkan')}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button type="submit" className="adm-refresh" style={{ padding: '10px 28px' }} disabled={saving}>
+                {saving ? 'Menyimpan...' : (editId ? '💾 Simpan Perubahan' : '✅ Tambahkan Paket')}
               </button>
               <button type="button" className="adm-btn-danger-sm" style={{ padding: '10px 16px' }} onClick={closeForm}>Batal</button>
             </div>
@@ -227,8 +269,8 @@ export default function AdminPaket() {
           <table className="adm-table">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Label</th>
+                <th>Key</th>
+                <th>Nama Paket</th>
                 <th>Harga</th>
                 <th>Fitur</th>
                 <th>Urutan</th>
@@ -239,18 +281,29 @@ export default function AdminPaket() {
             <tbody>
               {packages.map(pkg => (
                 <tr key={pkg.id}>
-                  <td className="adm-muted adm-small">{pkg.key}</td>
+                  <td className="adm-muted adm-small" style={{ fontFamily: 'monospace' }}>{pkg.key}</td>
                   <td>
-                    <strong>{pkg.label}</strong>
-                    {pkg.popular && <span className="adm-paket-badge" style={{ marginLeft: 8 }}>Terpopuler</span>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <strong>{pkg.label}</strong>
+                      {pkg.popular && <span className="adm-paket-badge">Terpopuler</span>}
+                    </div>
                   </td>
-                  <td>{pkg.price} <span className="adm-muted adm-small">/ {pkg.price_note}</span></td>
-                  <td className="adm-muted adm-small">{pkg.features.length} fitur</td>
-                  <td className="adm-muted">{pkg.sort_order}</td>
                   <td>
-                    <span className={`adm-status-badge ${pkg.active ? 'adm-status-confirmed' : 'adm-status-pending'}`}>
-                      {pkg.active ? 'Aktif' : 'Nonaktif'}
-                    </span>
+                    <strong>{pkg.price}</strong>
+                    <div className="adm-muted adm-small">{pkg.price_note}</div>
+                  </td>
+                  <td className="adm-muted adm-small">{pkg.features.length} fitur</td>
+                  <td className="adm-muted" style={{ textAlign: 'center' }}>{pkg.sort_order}</td>
+                  <td>
+                    <button
+                      className={`adm-status-badge ${pkg.active ? 'adm-status-confirmed' : 'adm-status-pending'}`}
+                      style={{ border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      onClick={() => handleToggleActive(pkg)}
+                      disabled={toggling === pkg.id}
+                      title={pkg.active ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan'}
+                    >
+                      {toggling === pkg.id ? '...' : pkg.active ? '✓ Aktif' : '✗ Nonaktif'}
+                    </button>
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
