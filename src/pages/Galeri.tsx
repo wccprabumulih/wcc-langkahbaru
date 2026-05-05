@@ -5,6 +5,17 @@ import Footer from '../components/Footer'
 
 interface Photo { id: number; image_src: string; created_at: string }
 
+// Bento pattern repeating every 7: big, tall, small, small, wide, small, small
+function getBentoClass(i: number): string {
+  const mod = i % 7
+  if (mod === 0) return 'bento-big'
+  if (mod === 1) return 'bento-tall'
+  if (mod === 4) return 'bento-wide'
+  return 'bento-small'
+}
+
+const SKELETON_PATTERN = [0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6]
+
 export default function Galeri() {
   const [photos, setPhotos] = useState<Photo[]>([])
   const [total, setTotal] = useState(0)
@@ -13,7 +24,7 @@ export default function Galeri() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [lightbox, setLightbox] = useState<Photo | null>(null)
   const navigate = useNavigate()
-  const LIMIT = 24
+  const LIMIT = 28
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const fetchPhotos = async (p = 1, append = false) => {
@@ -33,7 +44,6 @@ export default function Galeri() {
 
   useEffect(() => { fetchPhotos(1) }, [])
 
-  // Keyboard navigation for lightbox
   useEffect(() => {
     if (!lightbox) return
     const handler = (e: KeyboardEvent) => {
@@ -51,111 +61,124 @@ export default function Galeri() {
     return () => window.removeEventListener('keydown', handler)
   }, [lightbox, photos])
 
-  // Lock scroll when lightbox open
   useEffect(() => {
     document.body.style.overflow = lightbox ? 'hidden' : ''
     return () => { document.body.style.overflow = '' }
   }, [lightbox])
 
+  const lightboxIdx = lightbox ? photos.findIndex(p => p.id === lightbox.id) : -1
   const hasMore = photos.length < total
 
   return (
     <>
-      {/* Lightbox */}
+      {/* ── Lightbox ─────────────────────────────────────────────────── */}
       {lightbox && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 9000, background: 'rgba(0,0,0,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-          onClick={() => setLightbox(null)}
-        >
+        <div className="glb-backdrop" onClick={() => setLightbox(null)}>
+          <button className="glb-close" onClick={() => setLightbox(null)}>✕</button>
+
+          {lightboxIdx > 0 && (
+            <button className="glb-nav glb-prev"
+              onClick={e => { e.stopPropagation(); setLightbox(photos[lightboxIdx - 1]) }}>‹</button>
+          )}
+          {lightboxIdx < photos.length - 1 && (
+            <button className="glb-nav glb-next"
+              onClick={e => { e.stopPropagation(); setLightbox(photos[lightboxIdx + 1]) }}>›</button>
+          )}
+
           <img
             src={lightbox.image_src}
             alt=""
+            className="glb-img"
             onClick={e => e.stopPropagation()}
-            style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 12, objectFit: 'contain', boxShadow: '0 0 60px rgba(0,0,0,0.8)' }}
           />
-          <button style={{ position: 'absolute', top: 20, right: 24, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: 44, height: 44, color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setLightbox(null)}>✕</button>
-          {/* Prev */}
-          {photos.findIndex(p => p.id === lightbox.id) > 0 && (
-            <button style={{ position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: 44, height: 44, color: '#fff', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              onClick={e => { e.stopPropagation(); const idx = photos.findIndex(p => p.id === lightbox.id); if (idx > 0) setLightbox(photos[idx - 1]) }}>‹</button>
-          )}
-          {/* Next */}
-          {photos.findIndex(p => p.id === lightbox.id) < photos.length - 1 && (
-            <button style={{ position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '50%', width: 44, height: 44, color: '#fff', fontSize: 22, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              onClick={e => { e.stopPropagation(); const idx = photos.findIndex(p => p.id === lightbox.id); if (idx < photos.length - 1) setLightbox(photos[idx + 1]) }}>›</button>
-          )}
+
+          <div className="glb-counter">
+            {lightboxIdx + 1} / {photos.length}
+          </div>
         </div>
       )}
 
       <Navbar />
 
-      <main style={{ minHeight: '100vh', paddingTop: 120, paddingBottom: 80, background: 'var(--bg-deep)' }}>
+      <main className="galeri-page">
         <div className="container">
 
-          {/* Header */}
-          <div style={{ marginBottom: 48 }}>
-            <button
-              onClick={() => navigate('/')}
-              style={{ background: 'none', border: 'none', color: 'var(--white-muted)', fontFamily: 'var(--font-body)', fontSize: 13, cursor: 'pointer', padding: 0, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 6, transition: 'color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'var(--white)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'var(--white-muted)')}
-            >
+          {/* ── Header ─────────────────────────────────────────────────── */}
+          <div className="galeri-header">
+            <button className="galeri-back" onClick={() => navigate('/')}>
               ← Kembali ke Beranda
             </button>
             <div className="section-tag">Portofolio</div>
-            <h1 className="section-title" style={{ marginTop: 12 }}>Galeri <span>Karya Kami</span></h1>
+            <h1 className="section-title" style={{ marginTop: 12 }}>
+              Galeri <span>Karya Kami</span>
+            </h1>
             <p className="section-desc" style={{ marginTop: 12 }}>
-              {total > 0 ? `${total} foto karya terbaik WCC Langkah Baru` : 'Koleksi karya wedding content creator kami'}
+              {total > 0
+                ? `${total} foto karya terbaik WCC Langkah Baru`
+                : 'Koleksi karya wedding content creator kami'}
             </p>
           </div>
 
-          {/* Loading state */}
+          {/* ── Skeleton loading ────────────────────────────────────────── */}
           {loading && (
-            <div className="galeri-grid">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} style={{ aspectRatio: '3/4', borderRadius: 12, background: 'rgba(255,255,255,0.04)', animation: 'skeleton-pulse 1.5s ease-in-out infinite', animationDelay: `${i * 0.05}s` }} />
-              ))}
+            <div className="galeri-bento">
+              {SKELETON_PATTERN.map((mod, i) => {
+                let cls = 'bento-small'
+                if (mod === 0) cls = 'bento-big'
+                else if (mod === 1) cls = 'bento-tall'
+                else if (mod === 4) cls = 'bento-wide'
+                return (
+                  <div key={i} className={`galeri-item ${cls} galeri-skeleton`}
+                    style={{ animationDelay: `${i * 0.06}s` }} />
+                )
+              })}
             </div>
           )}
 
-          {/* Empty state */}
+          {/* ── Empty state ─────────────────────────────────────────────── */}
           {!loading && photos.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--white-muted)' }}>
-              <div style={{ fontSize: 64, marginBottom: 20, opacity: 0.3 }}>📷</div>
-              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: 'var(--white)' }}>Galeri masih kosong</div>
-              <p style={{ fontSize: 14 }}>Foto-foto karya akan segera hadir di sini.</p>
+            <div className="galeri-empty">
+              <div className="galeri-empty-icon">📷</div>
+              <div className="galeri-empty-title">Galeri masih kosong</div>
+              <p>Foto-foto karya akan segera hadir di sini.</p>
             </div>
           )}
 
-          {/* Photo grid */}
+          {/* ── Bento grid ──────────────────────────────────────────────── */}
           {!loading && photos.length > 0 && (
-            <div className="galeri-grid">
+            <div className="galeri-bento">
               {photos.map((photo, i) => (
                 <div
                   key={photo.id}
-                  className="galeri-item"
-                  style={{ animationDelay: `${(i % LIMIT) * 0.03}s` }}
+                  className={`galeri-item ${getBentoClass(i)}`}
+                  style={{ animationDelay: `${(i % LIMIT) * 0.04}s` }}
                   onClick={() => setLightbox(photo)}
                 >
                   <img src={photo.image_src} alt="" className="galeri-img" loading="lazy" />
                   <div className="galeri-item-overlay">
-                    <span style={{ fontSize: 24 }}>🔍</span>
+                    <div className="galeri-zoom-icon">
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                        <circle cx="8.5" cy="8.5" r="5.5" stroke="white" strokeWidth="1.8"/>
+                        <path d="M13 13l4 4" stroke="white" strokeWidth="1.8" strokeLinecap="round"/>
+                        <path d="M6 8.5h5M8.5 6v5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Load more */}
+          {/* ── Load more ───────────────────────────────────────────────── */}
           {hasMore && !loading && (
-            <div style={{ textAlign: 'center', marginTop: 48 }} ref={bottomRef}>
+            <div style={{ textAlign: 'center', marginTop: 56 }} ref={bottomRef}>
               <button
                 className="btn-outline"
-                style={{ padding: '14px 40px', fontSize: 14 }}
+                style={{ padding: '14px 44px', fontSize: 14, borderRadius: 50 }}
                 onClick={() => fetchPhotos(page + 1, true)}
                 disabled={loadingMore}
               >
-                {loadingMore ? 'Memuat...' : `Muat Lebih Banyak (${total - photos.length} foto lagi)`}
+                {loadingMore ? 'Memuat...' : `Muat Lebih Banyak — ${total - photos.length} foto lagi`}
               </button>
             </div>
           )}
