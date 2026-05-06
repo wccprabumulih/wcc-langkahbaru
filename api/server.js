@@ -68,7 +68,7 @@ app.post('/api/auth/create-profile', async (req, res) => {
 
     const { error } = await supabaseAdmin
       .from('profiles')
-      .upsert({ id: user_id, full_name: full_name || '', role: 'user' }, { onConflict: 'id' });
+      .upsert({ id: user_id, full_name: full_name || '', role: 'user' }, { onConflict: 'id', ignoreDuplicates: true });
 
     if (error) throw error;
     res.json({ success: true, role: 'user' });

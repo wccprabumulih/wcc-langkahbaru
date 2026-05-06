@@ -67,14 +67,9 @@ export default function Auth() {
         // AuthContext will pick up the session and redirect automatically
         setSuccess('Akun berhasil dibuat! Sedang mengarahkan...')
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-
         // Role-based redirect is handled by useEffect above via AuthContext
-        // But if profile doesn't exist yet, create it
-        if (data.user) {
-          await createProfile(data.user.id, data.user.user_metadata?.full_name || '')
-        }
       }
     } catch (err: any) {
       const msg = err.message || 'Terjadi kesalahan'
