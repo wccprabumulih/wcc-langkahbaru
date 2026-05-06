@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 import { Order, UserProfile, formatDate, formatDateTime, paketLabel, paketClass } from './types'
+import { authFetch } from '../lib/authFetch'
 
 const shortcuts = [
   { key: 'pesanan',    label: 'Kelola Pesanan' },
@@ -11,20 +11,15 @@ const shortcuts = [
 ]
 
 export default function AdminDashboard({ onNavigate }: { onNavigate: (page: string) => void }) {
-  const { session } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session?.access_token}`,
-  }
-
   useEffect(() => {
+    const h = { 'Content-Type': 'application/json' }
     Promise.all([
-      fetch('/api/orders', { headers }).then(r => r.json()),
-      fetch('/api/admin/users', { headers }).then(r => r.json()),
+      authFetch('/api/orders', { headers: h }).then(r => r.json()),
+      authFetch('/api/admin/users', { headers: h }).then(r => r.json()),
     ]).then(([ordersData, usersData]) => {
       if (ordersData.success) setOrders(ordersData.data)
       if (usersData.success) setUsers(usersData.data)

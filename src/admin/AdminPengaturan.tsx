@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { authFetch } from '../lib/authFetch'
 
 function compressImage(file: File, maxW = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -25,12 +26,10 @@ function compressImage(file: File, maxW = 1200, quality = 0.82): Promise<string>
 }
 
 function PhotoSlot({
-  token,
   slot,
   label,
   description,
 }: {
-  token: string
   slot: string
   label: string
   description: string
@@ -48,13 +47,12 @@ function PhotoSlot({
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith('image/')) { setMsg({ type: 'err', text: 'File harus berupa gambar.' }); return }
-    if (!token) { setMsg({ type: 'err', text: 'Sesi tidak ditemukan. Silakan login ulang.' }); return }
     setLoading(true); setMsg(null)
     try {
       const compressed = await compressImage(file)
-      const res = await fetch(`/api/admin/images/${slot}`, {
+      const res = await authFetch(`/api/admin/images/${slot}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image_data: compressed, label }),
       })
       const data = await res.json()
@@ -70,13 +68,9 @@ function PhotoSlot({
   }
 
   const handleDelete = async () => {
-    if (!token) { setMsg({ type: 'err', text: 'Sesi tidak ditemukan. Silakan login ulang.' }); return }
     setLoading(true); setMsg(null)
     try {
-      const res = await fetch(`/api/admin/images/${slot}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await authFetch(`/api/admin/images/${slot}`, { method: 'DELETE' })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setImgSrc(null)
@@ -123,8 +117,7 @@ function PhotoSlot({
 
 
 export default function AdminPengaturan() {
-  const { user, session, signOut } = useAuth()
-  const token = session?.access_token ?? ''
+  const { user, signOut } = useAuth()
 
   const [pwForm, setPwForm] = useState({ next: '', confirm: '' })
   const [pwMsg, setPwMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
@@ -206,7 +199,6 @@ export default function AdminPengaturan() {
         <div className="adm-settings-card" style={{ gridColumn: '1 / -1' }}>
           <div className="adm-settings-card-title">🖼️ Foto Hero (Kartu Visual Utama)</div>
           <PhotoSlot
-            token={token}
             slot="hero-main"
             label="Foto Hero"
             description={`Foto ini tampil di <strong style="color:var(--white)">kartu visual</strong> pada section Hero halaman utama.<br />Gunakan foto portrait pernikahan untuk hasil terbaik. Format JPG/PNG, otomatis dikompres.`}

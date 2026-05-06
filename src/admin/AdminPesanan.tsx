@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
 import { Order, formatDate, formatDateTime, paketLabel, paketClass } from './types'
+import { authFetch } from '../lib/authFetch'
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Pending',
@@ -10,23 +10,19 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 export default function AdminPesanan() {
-  const { session } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [filter, setFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Order | null>(null)
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session?.access_token}`,
-  }
+  const h = { 'Content-Type': 'application/json' }
 
   const loadOrders = async (status = '') => {
     setLoading(true)
     try {
       const url = status ? `/api/orders?status=${status}` : '/api/orders'
-      const res = await fetch(url, { headers })
+      const res = await authFetch(url, { headers: h })
       const data = await res.json()
       if (data.success) setOrders(data.data)
     } finally {
@@ -39,9 +35,9 @@ export default function AdminPesanan() {
   const handleFilter = (f: string) => { setFilter(f); loadOrders(f) }
 
   const updateStatus = async (id: number, status: string) => {
-    const res = await fetch(`/api/orders/${id}/status`, {
+    const res = await authFetch(`/api/orders/${id}/status`, {
       method: 'POST',
-      headers,
+      headers: h,
       body: JSON.stringify({ status }),
     })
     const data = await res.json()
@@ -51,7 +47,7 @@ export default function AdminPesanan() {
   const handleDelete = async (order: Order) => {
     setDeletingId(order.id)
     try {
-      const res = await fetch(`/api/orders/${order.id}`, { method: 'DELETE', headers })
+      const res = await authFetch(`/api/orders/${order.id}`, { method: 'DELETE', headers: h })
       const data = await res.json()
       if (data.success) { setConfirmDelete(null); loadOrders(filter) }
     } finally {

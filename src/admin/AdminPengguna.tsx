@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { UserProfile, formatDate, formatDateTime } from './types'
+import { authFetch } from '../lib/authFetch'
 
 export default function AdminPengguna() {
-  const { user, session } = useAuth()
+  const { user } = useAuth()
   const [users, setUsers] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<UserProfile | null>(null)
@@ -11,15 +12,12 @@ export default function AdminPengguna() {
   const [deleting, setDeleting] = useState(false)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session?.access_token}`,
-  }
+  const h = { 'Content-Type': 'application/json' }
 
   const loadUsers = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/users', { headers })
+      const res = await authFetch('/api/admin/users', { headers: h })
       const data = await res.json()
       if (data.success) setUsers(data.data)
     } finally {
@@ -41,8 +39,8 @@ export default function AdminPengguna() {
     setRoleChanging(true)
     setMsg(null)
     try {
-      const res = await fetch(`/api/admin/users/${selected.id}/role`, {
-        method: 'POST', headers, body: JSON.stringify({ role: newRole }),
+      const res = await authFetch(`/api/admin/users/${selected.id}/role`, {
+        method: 'POST', headers: h, body: JSON.stringify({ role: newRole }),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
@@ -61,7 +59,7 @@ export default function AdminPengguna() {
     if (!confirm(`Hapus pengguna "${selected.full_name || selected.email}"?\n\nAksi ini tidak bisa dibatalkan.`)) return
     setDeleting(true)
     try {
-      const res = await fetch(`/api/admin/users/${selected.id}`, { method: 'DELETE', headers })
+      const res = await authFetch(`/api/admin/users/${selected.id}`, { method: 'DELETE', headers: h })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setUsers(us => us.filter(u => u.id !== selected.id))

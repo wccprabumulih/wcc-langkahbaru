@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { authFetch } from '../lib/authFetch'
 
 interface Partner {
   id: number
@@ -37,8 +37,6 @@ function compressLogo(file: File, maxW = 400, quality = 0.85): Promise<string> {
 }
 
 export default function AdminPartner() {
-  const { session } = useAuth()
-  const token = session?.access_token ?? ''
   const [partners, setPartners] = useState<Partner[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -49,12 +47,12 @@ export default function AdminPartner() {
   const [form, setForm] = useState(emptyForm)
   const logoRef = useRef<HTMLInputElement>(null)
 
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+  const h = { 'Content-Type': 'application/json' }
 
   const fetchPartners = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/partners', { headers: { Authorization: `Bearer ${token}` } })
+      const res = await authFetch('/api/admin/partners', { headers: h })
       const d = await res.json()
       if (d.success) setPartners(d.data)
     } finally {
@@ -95,7 +93,7 @@ export default function AdminPartner() {
     try {
       const url = editId ? `/api/admin/partners/${editId}` : '/api/admin/partners'
       const method = editId ? 'PUT' : 'POST'
-      const res = await fetch(url, { method, headers, body: JSON.stringify(form) })
+      const res = await authFetch(url, { method, headers: h, body: JSON.stringify(form) })
       const d = await res.json()
       if (!d.success) throw new Error(d.message)
       setMsg({ type: 'ok', text: editId ? 'Partner berhasil diupdate!' : 'Partner berhasil ditambahkan!' })
@@ -112,7 +110,7 @@ export default function AdminPartner() {
     if (!confirm(`Hapus partner "${name}"?`)) return
     setDeletingId(id)
     try {
-      const res = await fetch(`/api/admin/partners/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      const res = await authFetch(`/api/admin/partners/${id}`, { method: 'DELETE' })
       const d = await res.json()
       if (!d.success) throw new Error(d.message)
       setPartners(prev => prev.filter(p => p.id !== id))
@@ -126,8 +124,8 @@ export default function AdminPartner() {
 
   const toggleActive = async (p: Partner) => {
     try {
-      await fetch(`/api/admin/partners/${p.id}`, {
-        method: 'PUT', headers,
+      await authFetch(`/api/admin/partners/${p.id}`, {
+        method: 'PUT', headers: h,
         body: JSON.stringify({ ...p, active: !p.active }),
       })
       setPartners(prev => prev.map(x => x.id === p.id ? { ...x, active: !x.active } : x))

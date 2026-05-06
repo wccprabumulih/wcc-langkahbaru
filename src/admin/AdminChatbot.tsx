@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { authFetch } from '../lib/authFetch'
 
 interface Knowledge {
   id: number
@@ -14,8 +14,6 @@ interface Knowledge {
 const emptyForm = { category: '', question: '', answer: '', active: true, order_index: 0 }
 
 export default function AdminChatbot() {
-  const { session } = useAuth()
-  const token = session?.access_token ?? ''
   const [items, setItems] = useState<Knowledge[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -28,12 +26,12 @@ export default function AdminChatbot() {
   const [testReply, setTestReply] = useState('')
   const [testing, setTesting] = useState(false)
 
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+  const h = { 'Content-Type': 'application/json' }
 
   const fetchItems = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/chatbot', { headers: { Authorization: `Bearer ${token}` } })
+      const res = await authFetch('/api/admin/chatbot', { headers: h })
       const d = await res.json()
       if (d.success) setItems(d.data)
     } finally { setLoading(false) }
@@ -54,7 +52,7 @@ export default function AdminChatbot() {
     setSaving(true); setMsg(null)
     try {
       const url = editId ? `/api/admin/chatbot/${editId}` : '/api/admin/chatbot'
-      const res = await fetch(url, { method: editId ? 'PUT' : 'POST', headers, body: JSON.stringify(form) })
+      const res = await authFetch(url, { method: editId ? 'PUT' : 'POST', headers: h, body: JSON.stringify(form) })
       const d = await res.json()
       if (!d.success) throw new Error(d.message)
       setMsg({ type: 'ok', text: editId ? 'Pengetahuan diupdate!' : 'Pengetahuan ditambahkan!' })
@@ -68,14 +66,14 @@ export default function AdminChatbot() {
     if (!confirm('Hapus entri pengetahuan ini?')) return
     setDeletingId(id)
     try {
-      await fetch(`/api/admin/chatbot/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      await authFetch(`/api/admin/chatbot/${id}`, { method: 'DELETE' })
       setItems(prev => prev.filter(x => x.id !== id))
     } finally { setDeletingId(null) }
   }
 
   const toggleActive = async (k: Knowledge) => {
     try {
-      await fetch(`/api/admin/chatbot/${k.id}`, { method: 'PUT', headers, body: JSON.stringify({ ...k, active: !k.active }) })
+      await authFetch(`/api/admin/chatbot/${k.id}`, { method: 'PUT', headers: h, body: JSON.stringify({ ...k, active: !k.active }) })
       setItems(prev => prev.map(x => x.id === k.id ? { ...x, active: !x.active } : x))
     } catch { /* silent */ }
   }

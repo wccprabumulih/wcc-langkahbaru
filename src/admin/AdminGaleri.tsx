@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { authFetch } from '../lib/authFetch'
 
 interface Photo { id: number; image_src: string; created_at: string }
 
@@ -26,8 +26,6 @@ function compressImage(file: File, maxW = 1400, quality = 0.80): Promise<string>
 }
 
 export default function AdminGaleri() {
-  const { session } = useAuth()
-  const token = session?.access_token ?? ''
   const [photos, setPhotos] = useState<Photo[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -69,9 +67,9 @@ export default function AdminGaleri() {
       } catch { /* skip bad files */ }
     }
     try {
-      const res = await fetch('/api/admin/gallery', {
+      const res = await authFetch('/api/admin/gallery', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ images: compressed }),
       })
       setUploadProgress(100)
@@ -91,10 +89,7 @@ export default function AdminGaleri() {
     if (!confirm('Hapus foto ini?')) return
     setDeletingId(id)
     try {
-      const res = await fetch(`/api/admin/gallery/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      const res = await authFetch(`/api/admin/gallery/${id}`, { method: 'DELETE' })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setPhotos(prev => prev.filter(p => p.id !== id))

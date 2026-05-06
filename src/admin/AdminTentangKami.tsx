@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { authFetch } from '../lib/authFetch'
 
 interface Feature {
   icon: string
@@ -55,9 +55,7 @@ function compressImage(file: File, maxW = 1200, quality = 0.82): Promise<string>
 }
 
 export default function AdminTentangKami() {
-  const { session } = useAuth()
-  const token = session?.access_token ?? ''
-  const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
+  const h = { 'Content-Type': 'application/json' }
 
   const [content, setContent] = useState<AboutContent>(DEFAULT)
   const [loading, setLoading] = useState(true)
@@ -97,8 +95,8 @@ export default function AdminTentangKami() {
   const handleSave = async () => {
     setSaving(true); setMsg(null)
     try {
-      const res = await fetch('/api/admin/content/about', {
-        method: 'PUT', headers, body: JSON.stringify(content),
+      const res = await authFetch('/api/admin/content/about', {
+        method: 'PUT', headers: h, body: JSON.stringify(content),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
@@ -116,8 +114,8 @@ export default function AdminTentangKami() {
     setImgLoading(true); setImgMsg(null)
     try {
       const compressed = await compressImage(file)
-      const res = await fetch('/api/admin/images/about-main', {
-        method: 'PUT', headers,
+      const res = await authFetch('/api/admin/images/about-main', {
+        method: 'PUT', headers: h,
         body: JSON.stringify({ image_data: compressed, label: 'Foto Tentang Kami' }),
       })
       const data = await res.json()
@@ -135,7 +133,7 @@ export default function AdminTentangKami() {
   const handleImgDelete = async () => {
     setImgLoading(true); setImgMsg(null)
     try {
-      const res = await fetch('/api/admin/images/about-main', { method: 'DELETE', headers })
+      const res = await authFetch('/api/admin/images/about-main', { method: 'DELETE', headers: h })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setImgSrc(null)

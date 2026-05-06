@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { authFetch } from '../lib/authFetch'
 
 interface Review {
   id: number
@@ -23,20 +23,16 @@ function formatDate(iso: string) {
 }
 
 export default function AdminUlasan() {
-  const { session } = useAuth()
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<number | null>(null)
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session?.access_token}`,
-  }
+  const h = { 'Content-Type': 'application/json' }
 
   const load = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/reviews', { headers })
+      const res = await authFetch('/api/admin/reviews', { headers: h })
       const data = await res.json()
       if (data.success) setReviews(data.data)
     } finally {
@@ -49,7 +45,7 @@ export default function AdminUlasan() {
   const handleToggle = async (review: Review) => {
     setToggling(review.id)
     try {
-      const res = await fetch(`/api/admin/reviews/${review.id}/visible`, { method: 'PUT', headers })
+      const res = await authFetch(`/api/admin/reviews/${review.id}/visible`, { method: 'PUT', headers: h })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setReviews(rs => rs.map(r => r.id === review.id ? { ...r, visible: data.visible } : r))
@@ -63,7 +59,7 @@ export default function AdminUlasan() {
   const handleDelete = async (review: Review) => {
     if (!confirm(`Hapus ulasan dari "${review.name}"?`)) return
     try {
-      const res = await fetch(`/api/admin/reviews/${review.id}`, { method: 'DELETE', headers })
+      const res = await authFetch(`/api/admin/reviews/${review.id}`, { method: 'DELETE', headers: h })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setReviews(rs => rs.filter(r => r.id !== review.id))

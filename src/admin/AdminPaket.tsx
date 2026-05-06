@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../contexts/AuthContext'
+import { authFetch } from '../lib/authFetch'
 
 interface Package {
   id: number
@@ -31,7 +31,6 @@ const emptyForm = (): Omit<Package, 'id'> => ({
 })
 
 export default function AdminPaket() {
-  const { session } = useAuth()
   const [packages, setPackages] = useState<Package[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -42,15 +41,12 @@ export default function AdminPaket() {
   const [toggling, setToggling] = useState<number | null>(null)
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${session?.access_token}`,
-  }
+  const h = { 'Content-Type': 'application/json' }
 
   const load = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/api/admin/packages', { headers })
+      const res = await authFetch('/api/admin/packages', { headers: h })
       const data = await res.json()
       if (data.success) setPackages(data.data)
     } finally {
@@ -101,7 +97,7 @@ export default function AdminPaket() {
       }
       const url = editId ? `/api/admin/packages/${editId}` : '/api/admin/packages'
       const method = editId ? 'PUT' : 'POST'
-      const res = await fetch(url, { method, headers, body: JSON.stringify(body) })
+      const res = await authFetch(url, { method, headers: h, body: JSON.stringify(body) })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       setMsg({ type: 'ok', text: editId ? 'Paket berhasil diperbarui.' : 'Paket berhasil ditambahkan.' })
@@ -117,7 +113,7 @@ export default function AdminPaket() {
   const handleDelete = async (pkg: Package) => {
     if (!confirm(`Hapus paket "${pkg.label}"?`)) return
     try {
-      const res = await fetch(`/api/admin/packages/${pkg.id}`, { method: 'DELETE', headers })
+      const res = await authFetch(`/api/admin/packages/${pkg.id}`, { method: 'DELETE', headers: h })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
       load()
@@ -130,8 +126,8 @@ export default function AdminPaket() {
     setToggling(pkg.id)
     try {
       const body = { ...pkg, active: !pkg.active, features: pkg.features }
-      const res = await fetch(`/api/admin/packages/${pkg.id}`, {
-        method: 'PUT', headers, body: JSON.stringify(body),
+      const res = await authFetch(`/api/admin/packages/${pkg.id}`, {
+        method: 'PUT', headers: h, body: JSON.stringify(body),
       })
       const data = await res.json()
       if (!data.success) throw new Error(data.message)
